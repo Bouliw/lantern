@@ -1,7 +1,7 @@
 /**
  * Shared audio engine: one AudioContext (created on the first gesture), a gentle compressor,
  * a soft synthetic room reverb, and two buses (interface sounds, background music).
- * The instruments below are small synthesized voices: electric piano, felt piano, bell,
+ * The instruments below are small synthesized voices: electric piano, felt piano,
  * marimba, plucks, a breathy lead, pads, soft drums… shaped with real envelopes so nothing
  * sounds like a raw oscillator.
  */
@@ -129,24 +129,6 @@ export function epiano(out: AudioNode, t: number, m: number, dur: number, vel: n
   env(tine, t, 0.035 * vel, 0.002, 0.06);
   tine.connect(out);
   osc('sine', f * 7.02, t, t + 0.1, tine);
-}
-
-/** Struck bell / celesta: inharmonic partials that die out from the top. */
-export function bell(out: AudioNode, t: number, m: number, dur: number, vel: number) {
-  const f = mtof(m);
-  const partials: [number, number, number][] = [
-    [1, 1, 1],
-    [2, 0.4, 0.55],
-    [2.76, 0.28, 0.4],
-    [4.07, 0.12, 0.25],
-    [5.4, 0.07, 0.16],
-  ];
-  for (const [ratio, gain, life] of partials) {
-    const g = ctx!.createGain();
-    env(g, t, 0.18 * vel * gain, 0.003, dur * life);
-    g.connect(out);
-    osc('sine', f * ratio, t, t + dur * life + 0.05, g);
-  }
 }
 
 /** Wooden marimba: round fundamental plus a quick overtone knock. */
