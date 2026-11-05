@@ -15,6 +15,10 @@ export interface Appearance {
   motion: Motion;
   cards: CardShape;
   size: CardSize;
+  /** Interface sounds. */
+  sounds: boolean;
+  /** Tint the page with the colors of the artwork on screen. */
+  ambient: boolean;
 }
 
 export const DEFAULT_APPEARANCE: Appearance = {
@@ -24,6 +28,8 @@ export const DEFAULT_APPEARANCE: Appearance = {
   motion: 'juicy',
   cards: 'landscape',
   size: 'm',
+  sounds: true,
+  ambient: true,
 };
 
 const SCOPE_KEY = 'lantern.appearance.scope';
@@ -33,9 +39,14 @@ const PREF_CLIENT = 'lantern';
 
 const profileKey = () => `lantern.appearance.profile.${serverUrl.value}|${userId()}`;
 
+/** Style ids used by earlier versions. */
+const RENAMED: Record<string, ThemeId> = { titlecard: 'eva', chrome: 'y2k', ransom: 'p5' };
+
 function sanitize(a: Partial<Appearance> | null | undefined): Appearance {
   const merged = { ...DEFAULT_APPEARANCE, ...(a ?? {}) } as Appearance;
   merged.custom = { ...DEFAULT_APPEARANCE.custom, ...(a?.custom ?? {}) };
+  merged.theme = (RENAMED[merged.theme] ?? merged.theme) as Appearance['theme'];
+  for (const k of ['palette', 'type', 'shape'] as const) merged.custom[k] = RENAMED[merged.custom[k]] ?? merged.custom[k];
   const ok = (t: string): t is ThemeId => (THEMES as readonly string[]).includes(t);
   if (merged.theme !== 'custom' && !ok(merged.theme)) merged.theme = 'classic';
   for (const k of ['palette', 'type', 'shape'] as const) if (!ok(merged.custom[k])) merged.custom[k] = 'classic';
@@ -123,6 +134,7 @@ effect(() => {
   root.dataset.motion = isTV ? 'off' : reduceMotion.matches && a.motion === 'juicy' ? 'subtle' : a.motion;
   root.dataset.cards = a.cards;
   root.dataset.size = a.size;
+  root.dataset.ambient = a.ambient ? 'on' : 'off';
   if (a.accent) {
     root.style.setProperty('--accent', a.accent);
     root.style.setProperty('--accent-ink', inkFor(a.accent));

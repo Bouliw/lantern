@@ -25,6 +25,7 @@ import {
   IconVolume,
 } from '../ui/icons';
 import { caps, deviceProfile } from './profile';
+import { playSound } from '../fx/sound';
 import { cuesAt, parseVtt, type Cue } from './subtitles';
 
 type PlayMethod = 'DirectPlay' | 'DirectStream' | 'Transcode';
@@ -53,6 +54,29 @@ function needsBurnIn(s: MediaStream): boolean {
 function fileDefaultAudio(it: Item): number | undefined {
   const audio = (it.MediaStreams ?? []).filter((s) => s.Type === 'Audio');
   return (audio.find((s) => s.IsDefault) ?? audio[0])?.Index;
+}
+
+const playableAudio = () =>
+  new Set(['aac', 'mp3', 'vorbis', caps.ac3 && 'ac3', caps.eac3 && 'eac3', caps.opus && 'opus', caps.flac && 'flac'].filter(Boolean) as string[]);
+
+/**
+ * The file's default track, unless this device cannot decode it (TrueHD, DTS…): then a track
+ * in the same language that it can play, so the server only remuxes instead of transcoding.
+ */
+function preferredAudio(it: Item): number | undefined {
+  const audio = (it.MediaStreams ?? []).filter((s) => s.Type === 'Audio');
+  const def = audio.find((s) => s.IsDefault) ?? audio[0];
+  if (!def) return undefined;
+  const ok = playableAudio();
+  if (ok.has((def.Codec ?? '').toLowerCase())) return def.Index;
+  const alt = audio.find(
+    (s) =>
+      s !== def &&
+      s.Language === def.Language &&
+      ok.has((s.Codec ?? '').toLowerCase()) &&
+      !/comment/i.test(`${s.Title ?? ''} ${s.DisplayTitle ?? ''}`),
+  );
+  return (alt ?? def).Index;
 }
 
 function streamLabel(s: MediaStream): string {
@@ -112,6 +136,7 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [pulse, setPulse] = useState<{ kind: 'play' | 'pause' | 'fwd' | 'back'; n: number; label?: string } | null>(null);
   const [waiting, setWaiting] = useState(true);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
@@ -262,7 +287,7 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
     // The track flagged as default in the file is what direct play uses; ask for it explicitly
     // so a remux or transcode keeps the same language.
     const defaultAudio = fileDefaultAudio(it);
-    if (audio == null) audio = defaultAudio;
+    if (audio == null) audio = preferredAudio(it);
     const subStream = it.MediaStreams?.find((s) => s.Type === 'Subtitle' && s.Index === sub);
     const burn = sub >= 0 && !!subStream && needsBurnIn(subStream);
     const noDirect =
@@ -487,8 +512,14 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
 
   // ---- Actions -----------------------------------------------------------------
 
+  const fire = (kind: 'play' | 'pause' | 'fwd' | 'back', label?: string) =>
+    setPulse((p) => ({ kind, label, n: (p?.n ?? 0) + 1 }));
+
   const togglePlay = () => {
     const v = video.current!;
+    const kind = v.paused ? 'play' : 'pause';
+    fire(kind);
+    playSound(kind);
     if (v.paused) v.play().catch(() => {});
     else v.pause();
     poke();
@@ -503,10 +534,17 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
     poke();
   };
 
-  const seekBy = (delta: number) => seekTo((video.current?.currentTime ?? 0) + delta);
+  const seekLabel = (delta: number) => (delta > 0 ? `+${delta}` : `−${-delta}`);
+  const seekBy = (delta: number) => {
+    fire(delta > 0 ? 'fwd' : 'back', seekLabel(delta));
+    playSound('toggle');
+    seekTo((video.current?.currentTime ?? 0) + delta);
+  };
 
   /** TV: arrow presses accumulate, the jump happens once the user stops pressing. */
   const nudge = (delta: number) => {
+    fire(delta > 0 ? 'fwd' : 'back', seekLabel(delta));
+    playSound('move');
     const base = st.current.seekTarget ?? video.current?.currentTime ?? 0;
     const target = Math.max(0, Math.min(base + delta, (st.current.duration || 1) - 1));
     setSeekTarget(target);
@@ -746,6 +784,12 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
         </div>
       )}
 
+      {pulse && (
+        <div key={pulse.n} class={'player-pulse ' + pulse.kind} aria-hidden="true">
+          {pulse.kind === 'play' ? <IconPlay size={46} /> : pulse.kind === 'pause' ? <IconPause size={46} /> : <span>{pulse.label}</span>}
+        </div>
+      )}
+
       {waiting && !error && (
         <div class="player-center">
           <span class="spinner" />
@@ -816,13 +860,13 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
         </div>
 
         <div class="player-row">
-          <button class="icon-btn big" data-nav data-nav-autofocus onClick={togglePlay} aria-label={paused ? t('player.play') : t('player.pause')}>
+          <button class="icon-btn big" data-nav data-nav-autofocus data-sound="none" onClick={togglePlay} aria-label={paused ? t('player.play') : t('player.pause')}>
             {paused ? <IconPlay size={34} /> : <IconPause size={34} />}
           </button>
-          <button class="icon-btn" data-nav onClick={() => (isTV ? nudge(-10) : seekBy(-10))} aria-label={t('player.back10')}>
+          <button class="icon-btn" data-nav data-sound="none" onClick={() => (isTV ? nudge(-10) : seekBy(-10))} aria-label={t('player.back10')}>
             <IconReplay10 size={30} />
           </button>
-          <button class="icon-btn" data-nav onClick={() => (isTV ? nudge(10) : seekBy(10))} aria-label={t('player.fwd10')}>
+          <button class="icon-btn" data-nav data-sound="none" onClick={() => (isTV ? nudge(10) : seekBy(10))} aria-label={t('player.fwd10')}>
             <IconForward10 size={30} />
           </button>
           {hasHover && (

@@ -254,6 +254,24 @@ export function Settings() {
         />
         {isTV && <p class="setting-hint">{t('settings.motionTv')}</p>}
         <Segmented
+          label={t('settings.sounds')}
+          value={a.sounds ? 'on' : 'off'}
+          options={[
+            { value: 'on', label: t('settings.on') },
+            { value: 'off', label: t('settings.off') },
+          ]}
+          onChange={(v) => setAppearance({ sounds: v === 'on' })}
+        />
+        <Segmented
+          label={t('settings.ambient')}
+          value={a.ambient ? 'on' : 'off'}
+          options={[
+            { value: 'on', label: t('settings.on') },
+            { value: 'off', label: t('settings.off') },
+          ]}
+          onChange={(v) => setAppearance({ ambient: v === 'on' })}
+        />
+        <Segmented
           label={t('settings.cards')}
           value={a.cards}
           options={[

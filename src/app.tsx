@@ -9,6 +9,7 @@ import { isTV } from './platform';
 import { focusByKey, focusFirst, isBackKey, KEY, pushKeyHandler } from './nav/spatial';
 import { Header } from './ui/Header';
 import { HoverPreview } from './ui/HoverPreview';
+import { Decor } from './ui/Decor';
 import { Message } from './ui/Loading';
 import { Home } from './pages/Home';
 import { Library } from './pages/Library';
@@ -105,6 +106,7 @@ export function App() {
     return <Message text={t('common.offline')} action={{ label: t('common.retry'), run: () => loadCatalog(true) }} />;
   return (
     <>
+      <Decor />
       <Header />
       <Page />
       <HoverPreview />

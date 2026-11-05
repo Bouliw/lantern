@@ -69,6 +69,7 @@ export function Card({ item, rowKey, index, play, caption }: Props) {
         <Img src={imageUrl(art.image, w)} class="card-img" />
         {art.logo && <Img src={imageUrl(art.logo, 240)} class="card-logo" />}
         {art.showTitle && <span class="card-title">{item.Name}</span>}
+        <span class="card-fx" data-num={String(index + 1).padStart(2, '0')} />
         {progress > 0 && (
           <span class="card-progress">
             <span style={{ width: `${progress}%` }} />

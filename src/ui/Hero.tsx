@@ -9,6 +9,7 @@ import { t } from '../i18n';
 import { Img } from './Img';
 import { IconChevronLeft, IconChevronRight, IconInfo, IconPlay } from './icons';
 import { genres, lengthLabel, overviewOf, yearLabel } from './meta';
+import { ambientSource, setAmbientBase } from '../fx/ambient';
 
 const INTERVAL = 9000;
 const backdropWidth = () => Math.min(window.innerWidth, 1920);
@@ -49,6 +50,9 @@ export function Hero({ items }: { items: Item[] }) {
   useEffect(() => {
     if (n > 1) preload(backdropUrl(items[(safe + 1) % n]));
   }, [safe, n]);
+
+  useEffect(() => setAmbientBase(ambientSource(items[safe])), [items[safe]?.Id]);
+  useEffect(() => () => setAmbientBase(undefined), []);
 
   if (!n) return null;
   const item = items[safe];

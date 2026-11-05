@@ -1,4 +1,5 @@
 import { signal } from '@preact/signals';
+import { transition } from './fx/transitions';
 
 export interface Route {
   path: string;
@@ -35,7 +36,9 @@ window.addEventListener('hashchange', () => {
   if (next.key === lastKey) return;
   remember(lastKey);
   lastKey = next.key;
-  route.value = next;
+  transition(route.value.parts, next.parts, () => {
+    if (lastKey === next.key) route.value = next;
+  });
 });
 
 export function navigate(to: string, opts: { replace?: boolean } = {}) {

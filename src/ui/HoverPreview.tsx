@@ -9,6 +9,8 @@ import { t } from '../i18n';
 import { Img } from './Img';
 import { IconChevronDown, IconPlay, IconStar } from './icons';
 import { genres, lengthLabel, overviewOf, rating, yearLabel } from './meta';
+import { liveAllowed, startLive } from '../fx/live';
+import { ambientSource, setAmbientHint } from '../fx/ambient';
 
 interface State {
   item: Item;
@@ -76,6 +78,20 @@ export function HoverPreview() {
 
   // Close on navigation.
   useEffect(() => setState(null), [route.value.key]);
+
+  // The panel tints the page and its artwork comes alive.
+  const shown = state?.item;
+  useEffect(() => {
+    setAmbientHint(ambientSource(shown));
+    const box = panelRef.current?.querySelector<HTMLElement>('.hp-media');
+    if (!shown || !box || !liveAllowed()) return;
+    let stop: (() => void) | undefined;
+    const timer = setTimeout(() => (stop = startLive(box, shown)), 350);
+    return () => {
+      clearTimeout(timer);
+      stop?.();
+    };
+  }, [shown?.Id]);
 
   if (!state) return null;
   const { item, rect } = state;

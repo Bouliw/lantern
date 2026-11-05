@@ -1,0 +1,343 @@
+/*
+ * Effects layer: springs, ambient color, animated decor, per-style card effects, live
+ * thumbnails, page transitions and player feedback.
+ * TV rules stay instant; only cheap, compositor-friendly effects are allowed there.
+ */
+
+@property --ambient-c {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(0, 0, 0, 0);
+}
+
+/* The palette art moves to the root so the decor layers can sit between it and the content. */
+html { background-color: var(--bg); background-image: var(--bg-art); background-attachment: fixed; transition: --ambient-c 0.9s ease; }
+html[data-platform="tv"] { background-attachment: scroll; transition: none; }
+body { background: none; }
+
+/* ---------- Springs (driven from fx/juice.ts) ---------- */
+
+.springing {
+  transition-property: opacity, filter, background-color, border-color, color, box-shadow !important;
+  will-change: transform;
+}
+.card-media::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0) 55%);
+  transition: opacity 0.3s;
+}
+.card.tilting .card-media::after { opacity: 1; }
+
+/* ---------- Decor & ambient color ---------- */
+
+.decor { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.decor-layers, .decor-a, .decor-b { position: absolute; inset: 0; }
+.ambient-glow {
+  position: absolute; inset: 0; opacity: 0; transition: opacity 0.9s ease;
+  background:
+    radial-gradient(70% 55% at 50% 105%, color-mix(in srgb, var(--ambient-c) 30%, transparent), transparent 70%),
+    radial-gradient(55% 45% at 0% 0%, color-mix(in srgb, var(--ambient-c) 22%, transparent), transparent 70%);
+}
+html[data-ambient-lit] .ambient-glow { opacity: 1; }
+[data-palette="y2k"] .ambient-glow { filter: saturate(0.8); opacity: 0; }
+html[data-ambient-lit][data-palette="y2k"] .ambient-glow { opacity: 0.6; }
+html[data-ambient-lit] .hover-panel {
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.6), 0 0 80px -12px color-mix(in srgb, var(--ambient-c) 60%, transparent), var(--glow);
+}
+
+/* Eva: NERV hex grid and a slow scan line. */
+[data-palette="eva"] .decor-a {
+  opacity: 0.14;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50V16L28 0l28 16v34L28 66v34' fill='none' stroke='%23ff5a1f' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 56px 100px;
+  -webkit-mask-image: radial-gradient(120% 80% at 100% 100%, #000, transparent 70%);
+  mask-image: radial-gradient(120% 80% at 100% 100%, #000, transparent 70%);
+}
+[data-palette="eva"] .decor-b {
+  height: 30vh; inset: auto 0 auto 0; top: -30vh; opacity: 0.08;
+  background: linear-gradient(180deg, transparent, var(--accent) 50%, transparent);
+}
+[data-palette="eva"] .animated .decor-a { animation: hexDrift 90s linear infinite; }
+[data-palette="eva"] .animated .decor-b { animation: scanDown 11s linear infinite; }
+@keyframes hexDrift { to { background-position: 560px 1000px; } }
+@keyframes scanDown { to { transform: translateY(160vh); } }
+
+/* Y2K: floating bubbles and a chrome sheen. */
+[data-palette="y2k"] .decor-a {
+  opacity: 0.55;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.9), rgba(30, 123, 255, 0.18) 40%, transparent 62%) 8% 72% / 140px 140px no-repeat,
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.9), rgba(30, 123, 255, 0.16) 40%, transparent 62%) 88% 30% / 90px 90px no-repeat,
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.9), rgba(140, 90, 255, 0.16) 40%, transparent 62%) 72% 86% / 200px 200px no-repeat,
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.9), rgba(30, 200, 255, 0.16) 40%, transparent 62%) 22% 18% / 70px 70px no-repeat;
+}
+[data-palette="y2k"] .decor-b {
+  opacity: 0.35; inset: -50% -50%;
+  background: linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, 0.9) 50%, transparent 58%);
+}
+[data-palette="y2k"] .animated .decor-a { animation: bubbles 16s ease-in-out infinite alternate; }
+[data-palette="y2k"] .animated .decor-b { animation: sheen 14s ease-in-out infinite; }
+@keyframes bubbles { to { transform: translateY(-5vh); } }
+@keyframes sheen { 0%, 60% { transform: translateX(-60%); } 100% { transform: translateX(60%); } }
+
+/* Neon: synthwave floor running toward the viewer. */
+[data-palette="neon"] .decor-a {
+  inset: 58% -60% -30% -60%; opacity: 0.32;
+  background-image:
+    linear-gradient(rgba(255, 43, 214, 0.75) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.6) 1px, transparent 1px);
+  background-size: 64px 64px;
+  transform: perspective(380px) rotateX(64deg); transform-origin: 50% 0;
+  -webkit-mask-image: linear-gradient(transparent, #000 45%);
+  mask-image: linear-gradient(transparent, #000 45%);
+}
+[data-palette="neon"] .decor-b {
+  top: 40%; bottom: 30%; opacity: 0.5;
+  background: radial-gradient(60% 50% at 50% 60%, rgba(255, 43, 214, 0.28), transparent 70%);
+}
+[data-palette="neon"] .animated .decor-a { animation: floorRun 2.8s linear infinite; }
+[data-palette="neon"] .animated .decor-b { animation: horizon 5s ease-in-out infinite alternate; }
+@keyframes floorRun { to { background-position: 0 64px, 0 0; } }
+@keyframes horizon { to { opacity: 0.25; } }
+
+/* Glass: slow drifting light blobs. */
+[data-palette="glass"] .decor-a, [data-palette="glass"] .decor-b { inset: -20%; opacity: 0.55; }
+[data-palette="glass"] .decor-a { background: radial-gradient(32% 36% at 25% 30%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 70%); }
+[data-palette="glass"] .decor-b { background: radial-gradient(30% 34% at 75% 70%, color-mix(in srgb, var(--accent-2) 40%, transparent), transparent 70%); }
+[data-palette="glass"] .animated .decor-a { animation: drift 26s ease-in-out infinite alternate; }
+[data-palette="glass"] .animated .decor-b { animation: drift 32s ease-in-out infinite alternate-reverse; }
+@keyframes drift { to { transform: translate(12%, 8%) scale(1.15); } }
+
+/* Keynote: a stage spotlight swaying gently. */
+[data-palette="keynote"] .decor-a {
+  inset: 0 -20%;
+  background: radial-gradient(28% 70% at 50% -5%, rgba(255, 255, 255, 0.09), transparent 70%);
+}
+[data-palette="keynote"] .animated .decor-a { animation: sway 18s ease-in-out infinite alternate; }
+@keyframes sway { from { transform: translateX(-8%); } to { transform: translateX(8%); } }
+
+/* Pixel: starfield and CRT scanlines. */
+[data-palette="pixel"] .decor-a {
+  opacity: 0.7;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20px 30px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 140px 90px, #fff, transparent),
+    radial-gradient(2px 2px at 90px 160px, var(--accent), transparent),
+    radial-gradient(1.5px 1.5px at 210px 210px, #fff, transparent);
+  background-size: 260px 260px;
+}
+[data-palette="pixel"] .decor-b {
+  opacity: 0.5;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.35) 0 1px, transparent 1px 3px);
+}
+[data-palette="pixel"] .animated .decor-a { animation: stars 60s steps(240) infinite; }
+@keyframes stars { to { background-position: -520px 0; } }
+
+/* P5: red slashes and halftone. */
+[data-palette="p5"] .decor-a {
+  opacity: 0.22;
+  background:
+    linear-gradient(115deg, transparent 0 78%, var(--accent) 78% 83%, transparent 83% 86%, var(--accent) 86% 87%, transparent 87%),
+    linear-gradient(115deg, transparent 0 8%, var(--accent) 8% 10%, transparent 10%);
+}
+[data-palette="p5"] .decor-b {
+  opacity: 0.16;
+  background: radial-gradient(circle, #fff 1.3px, transparent 1.7px) 0 0 / 11px 11px;
+  -webkit-mask-image: radial-gradient(60% 70% at 100% 0%, #000, transparent 70%);
+  mask-image: radial-gradient(60% 70% at 100% 0%, #000, transparent 70%);
+}
+[data-palette="p5"] .animated .decor-a { animation: slash 7s ease-in-out infinite alternate; }
+@keyframes slash { to { transform: translateX(2%) skewX(-3deg); } }
+
+/* ---------- Cards: each style's own selection ---------- */
+
+.card-fx { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; transition: opacity 0.2s; border-radius: inherit; }
+.card:hover .card-fx, .card:focus .card-fx { opacity: 1; }
+.card-media > .card-logo, .card-media > .card-title, .card-media > .card-progress, .hp-media > .hp-logo, .hp-media > .hp-title { z-index: 2; }
+
+/* Eva: target brackets closing in, plus an episode tag. */
+[data-shape="eva"] .card-fx::before {
+  content: ""; position: absolute; inset: 0; transition: inset 0.35s var(--ease-spring);
+  background:
+    linear-gradient(var(--accent), var(--accent)) left top / 18px 3px,
+    linear-gradient(var(--accent), var(--accent)) left top / 3px 18px,
+    linear-gradient(var(--accent), var(--accent)) right top / 18px 3px,
+    linear-gradient(var(--accent), var(--accent)) right top / 3px 18px,
+    linear-gradient(var(--accent), var(--accent)) left bottom / 18px 3px,
+    linear-gradient(var(--accent), var(--accent)) left bottom / 3px 18px,
+    linear-gradient(var(--accent), var(--accent)) right bottom / 18px 3px,
+    linear-gradient(var(--accent), var(--accent)) right bottom / 3px 18px;
+  background-repeat: no-repeat;
+}
+[data-shape="eva"] .card:hover .card-fx::before, [data-shape="eva"] .card:focus .card-fx::before { inset: 7px; }
+[data-shape="eva"] .card-fx::after {
+  content: "EP." attr(data-num); position: absolute; top: 10px; right: 12px; padding: 2px 6px;
+  font: 700 0.68rem/1.2 "FX Mono", ui-monospace, monospace; letter-spacing: 0.12em; color: var(--accent); background: rgba(0, 0, 0, 0.7);
+}
+
+/* P5: a jagged red plate jumps out behind the card. */
+[data-shape="p5"] .card { isolation: isolate; }
+[data-shape="p5"] .card::before {
+  content: ""; position: absolute; inset: -8% -5%; z-index: -1; background: var(--accent);
+  clip-path: polygon(4% 9%, 96% 0, 100% 86%, 72% 90%, 76% 100%, 0 95%);
+  opacity: 0; transform: rotate(-4deg) scale(0.85); transition: opacity 0.12s, transform 0.4s var(--ease-spring);
+}
+[data-shape="p5"] .card:hover::before, [data-shape="p5"] .card:focus::before { opacity: 1; transform: rotate(-4deg) scale(1); }
+[data-shape="p5"] .card-media { transition: transform 0.3s var(--ease-spring); }
+[data-shape="p5"] .card:hover .card-media, [data-shape="p5"] .card:focus .card-media { transform: skewX(-3deg); }
+
+/* Pixel: a thick blinking frame. */
+[data-shape="pixel"] .card-fx { box-shadow: inset 0 0 0 4px var(--accent); }
+[data-shape="pixel"] .card:hover .card-fx, [data-shape="pixel"] .card:focus .card-fx { animation: pxBlink 0.9s steps(1) infinite; }
+@keyframes pxBlink { 50% { opacity: 0.25; } }
+
+/* Neon: a breathing tube light. */
+[data-shape="neon"] .card-fx { box-shadow: inset 0 0 0 2px var(--accent), inset 0 0 26px color-mix(in srgb, var(--accent) 55%, transparent); }
+[data-shape="neon"] .card:hover .card-fx, [data-shape="neon"] .card:focus .card-fx { animation: tube 1.8s ease-in-out infinite; }
+@keyframes tube { 50% { opacity: 0.5; } }
+
+/* Glass: frosted edge and highlight. */
+[data-shape="glass"] .card-fx {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  background: linear-gradient(125deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0) 42%);
+}
+
+/* Y2K: a chrome glint sweeping across. */
+[data-shape="y2k"] .card-fx { overflow: hidden; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7); }
+[data-shape="y2k"] .card-fx::before {
+  content: ""; position: absolute; top: -20%; bottom: -20%; left: -40%; width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  transform: translateX(0) skewX(-20deg);
+}
+[data-shape="y2k"] .card:hover .card-fx::before, [data-shape="y2k"] .card:focus .card-fx::before { animation: glint 0.75s var(--ease-out) both; }
+@keyframes glint { to { transform: translateX(560%) skewX(-20deg); } }
+
+/* Keynote: the card lifts off the stage. */
+[data-shape="keynote"] .card-media { transition: box-shadow 0.3s; }
+[data-shape="keynote"] .card:hover .card-media, [data-shape="keynote"] .card:focus .card-media { box-shadow: 0 26px 50px -18px rgba(0, 0, 0, 0.85); }
+
+/* TV keeps the cheap, compositor-only loops (opacity / transform). */
+[data-platform="tv"][data-shape="pixel"] .card:focus .card-fx { animation: pxBlink 0.9s steps(1) infinite !important; }
+[data-platform="tv"][data-shape="neon"] .card:focus .card-fx { animation: tube 1.8s ease-in-out infinite !important; }
+[data-platform="tv"][data-shape="y2k"] .card:focus .card-fx::before { animation: glint 0.6s ease-out both !important; }
+
+/* ---------- Live thumbnails ---------- */
+
+.live { position: absolute; inset: 0; z-index: 1; overflow: hidden; background: #000; opacity: 0; transition: opacity 0.45s ease; }
+.live.on { opacity: 1; }
+.live-frame { position: absolute; background-repeat: no-repeat; }
+
+/* ---------- Hero ---------- */
+
+[data-platform="desktop"][data-motion="juicy"] .hero-slide .hero-img { animation: kenBurns 16s ease-out both; }
+@keyframes kenBurns { from { transform: scale(1.0); } to { transform: scale(1.09) translate(-1.2%, -1%); } }
+.hero-stage { will-change: transform; }
+
+/* ---------- Cascades ---------- */
+
+[data-motion="juicy"] .episodes > li,
+[data-motion="juicy"] .details-body > *,
+[data-motion="juicy"] .settings-section { animation: rise 0.55s var(--ease-out) both; }
+[data-motion="juicy"] .episodes > li:nth-child(2), [data-motion="juicy"] .details-body > :nth-child(2), [data-motion="juicy"] .settings-section:nth-of-type(2) { animation-delay: 0.05s; }
+[data-motion="juicy"] .episodes > li:nth-child(3), [data-motion="juicy"] .details-body > :nth-child(3), [data-motion="juicy"] .settings-section:nth-of-type(3) { animation-delay: 0.1s; }
+[data-motion="juicy"] .episodes > li:nth-child(4), [data-motion="juicy"] .details-body > :nth-child(4), [data-motion="juicy"] .settings-section:nth-of-type(4) { animation-delay: 0.15s; }
+[data-motion="juicy"] .episodes > li:nth-child(5), [data-motion="juicy"] .settings-section:nth-of-type(5) { animation-delay: 0.2s; }
+[data-motion="juicy"] .episodes > li:nth-child(n + 6), [data-motion="juicy"] .settings-section:nth-of-type(n + 6) { animation-delay: 0.25s; }
+
+/* ---------- Player feedback ---------- */
+
+.player-pulse {
+  position: absolute; left: 50%; top: 50%; z-index: 3; width: 6.6rem; height: 6.6rem; margin: -3.3rem 0 0 -3.3rem;
+  display: grid; place-items: center; border-radius: 50%; pointer-events: none;
+  background: rgba(0, 0, 0, 0.5); color: #fff; font: 800 1.6rem/1 var(--font-body);
+  animation: pulseOut 0.6s var(--ease-out) both;
+}
+.player-pulse.fwd { left: 74%; }
+.player-pulse.back { left: 26%; }
+@keyframes pulseOut {
+  0% { opacity: 0; transform: scale(0.6); }
+  25% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+[data-platform="tv"] .player-pulse { animation: pulseOut 0.5s ease-out both !important; }
+html[data-motion="off"]:not([data-platform="tv"]) .player-pulse { display: none; }
+
+/* ---------- Page transitions (desktop) ---------- */
+
+html[data-vt] .header { view-transition-name: lantern-header; }
+::view-transition-group(lantern-header) { animation: none; }
+::view-transition-group(lantern-art) { animation-duration: 0.5s; animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
+::view-transition-old(lantern-art), ::view-transition-new(lantern-art) {
+  block-size: 100%; object-fit: cover; overflow: clip; animation-duration: 0.5s;
+}
+html[data-vt="morph"]::view-transition-old(root) { animation: vtOut 0.25s ease both; }
+html[data-vt="morph"]::view-transition-new(root) { animation: vtIn 0.35s 0.1s ease both; }
+html[data-vt="morph"] .details-backdrop { view-transition-name: lantern-art; }
+@keyframes vtOut { to { opacity: 0; } }
+@keyframes vtIn { from { opacity: 0; } }
+
+/* Classic: a quick crossfade. */
+html[data-vt="wipe"]::view-transition-old(root) { animation: vtOut 0.22s ease both; }
+html[data-vt="wipe"]::view-transition-new(root) { animation: vtIn 0.3s ease both; }
+
+/* Keynote: slides push. */
+html[data-vt="wipe"][data-palette="keynote"]::view-transition-old(root) { animation: pushOut 0.42s cubic-bezier(0.4, 0, 0.2, 1) both; }
+html[data-vt="wipe"][data-palette="keynote"]::view-transition-new(root) { animation: pushIn 0.42s cubic-bezier(0.4, 0, 0.2, 1) both; }
+@keyframes pushOut { to { opacity: 0; transform: translateX(-6%); } }
+@keyframes pushIn { from { opacity: 0; transform: translateX(6%); } }
+
+/* P5: a red slash cuts the old page away. */
+html[data-vt="wipe"][data-palette="p5"]::view-transition-image-pair(root) { isolation: auto; background: var(--accent, #e60012); }
+html[data-vt="wipe"][data-palette="p5"]::view-transition-old(root),
+html[data-vt="wipe"][data-palette="p5"]::view-transition-new(root) { mix-blend-mode: normal; }
+html[data-vt="wipe"][data-palette="p5"]::view-transition-old(root) { animation: p5Out 0.34s cubic-bezier(0.7, 0, 0.3, 1) both; }
+html[data-vt="wipe"][data-palette="p5"]::view-transition-new(root) { animation: p5In 0.34s 0.1s cubic-bezier(0.7, 0, 0.3, 1) both; }
+@keyframes p5Out {
+  from { clip-path: polygon(0 0, 125% 0, 100% 100%, -25% 100%); }
+  to { clip-path: polygon(125% 0, 125% 0, 100% 100%, 100% 100%); }
+}
+@keyframes p5In {
+  from { clip-path: polygon(0 0, 0 0, -25% 100%, -25% 100%); }
+  to { clip-path: polygon(0 0, 125% 0, 100% 100%, -25% 100%); }
+}
+
+/* Pixel: a stepped, 8-bit fade. */
+html[data-vt="wipe"][data-palette="pixel"]::view-transition-old(root) { animation: vtOut 0.32s steps(4) both; }
+html[data-vt="wipe"][data-palette="pixel"]::view-transition-new(root) { animation: vtIn 0.32s steps(4) both; }
+
+/* Neon: the new page flickers on like a tube. */
+html[data-vt="wipe"][data-palette="neon"]::view-transition-old(root) { animation: vtOut 0.18s ease both; }
+html[data-vt="wipe"][data-palette="neon"]::view-transition-new(root) { animation: flicker 0.5s linear both; }
+@keyframes flicker {
+  0% { opacity: 0; } 12% { opacity: 0.9; } 20% { opacity: 0.1; } 34% { opacity: 1; } 44% { opacity: 0.35; } 58%, 100% { opacity: 1; }
+}
+
+/* Glass: a frosted blur between pages. */
+html[data-vt="wipe"][data-palette="glass"]::view-transition-old(root) { animation: frostOut 0.35s ease both; }
+html[data-vt="wipe"][data-palette="glass"]::view-transition-new(root) { animation: frostIn 0.42s ease both; }
+@keyframes frostOut { to { opacity: 0; filter: blur(14px); } }
+@keyframes frostIn { from { opacity: 0; filter: blur(14px); } }
+
+/* Y2K: a soft diagonal sweep. */
+html[data-vt="wipe"][data-palette="y2k"]::view-transition-old(root) { animation: none; mix-blend-mode: normal; }
+html[data-vt="wipe"][data-palette="y2k"]::view-transition-new(root) {
+  mix-blend-mode: normal;
+  -webkit-mask-image: linear-gradient(110deg, #000 45%, transparent 55%); mask-image: linear-gradient(110deg, #000 45%, transparent 55%);
+  -webkit-mask-size: 250% 100%; mask-size: 250% 100%;
+  animation: sweep 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes sweep { from { -webkit-mask-position: 100% 0; mask-position: 100% 0; } to { -webkit-mask-position: 0 0; mask-position: 0 0; } }
+
+/* Eva: a black title card. */
+.title-card {
+  position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; padding: 0 9vw;
+  background: #000; pointer-events: none; animation: vtIn 0.08s linear both;
+}
+.title-card span {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; max-width: 82vw;
+  font-family: "FX Serif", Georgia, serif; font-weight: 900; font-stretch: 62.5%; font-size: clamp(3rem, 8.5vw, 9.5rem);
+  line-height: 0.92; letter-spacing: -0.01em; text-transform: uppercase; color: #f3ede2;
+  transform: scaleY(1.12); transform-origin: left center; animation: titleIn 0.42s var(--ease-out) both;
+}
+.title-card.out { opacity: 0; transition: opacity 0.2s linear; }
+@keyframes titleIn { from { opacity: 0; letter-spacing: 0.06em; } }

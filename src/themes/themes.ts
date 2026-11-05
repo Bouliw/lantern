@@ -1,28 +1,28 @@
-export const THEMES = ['classic', 'titlecard', 'chrome', 'neon', 'glass', 'keynote', 'pixel', 'ransom'] as const;
+export const THEMES = ['classic', 'eva', 'y2k', 'neon', 'glass', 'keynote', 'pixel', 'p5'] as const;
 export type ThemeId = (typeof THEMES)[number];
 
 /** Default accent of each palette (also used for the swatch "Default"). */
 export const THEME_ACCENT: Record<ThemeId, string> = {
   classic: '#e50914',
-  titlecard: '#ff5a1f',
-  chrome: '#1e7bff',
+  eva: '#ff5a1f',
+  y2k: '#1e7bff',
   neon: '#ff2bd6',
   glass: '#8ab4ff',
   keynote: '#2997ff',
   pixel: '#ff004d',
-  ransom: '#e60012',
+  p5: '#e60012',
 };
 
 /** Page background, used for the browser/OS chrome color. */
 export const THEME_BG: Record<ThemeId, string> = {
   classic: '#141414',
-  titlecard: '#0b0b0b',
-  chrome: '#d9e1ea',
+  eva: '#0b0b0b',
+  y2k: '#d9e1ea',
   neon: '#07051a',
   glass: '#0d1326',
   keynote: '#000000',
   pixel: '#111327',
-  ransom: '#0a0a0a',
+  p5: '#0a0a0a',
 };
 
 export const ACCENT_CHOICES = ['#e50914', '#ff5a1f', '#ffc93c', '#3ddc84', '#00d1ff', '#2997ff', '#8b5cf6', '#ff2bd6', '#f5f5f7'];

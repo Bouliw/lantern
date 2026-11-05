@@ -1,3 +1,4 @@
+import { playSound } from '../fx/sound';
 /**
  * Remote-control navigation for TVs.
  * - Elements with [data-nav] are focusable targets.
@@ -90,6 +91,7 @@ function rowItems(row: HTMLElement) {
 
 export function focusElement(el: HTMLElement | null | undefined, opts: { scroll?: boolean } = {}) {
   if (!el) return;
+  if (isTV && el !== document.activeElement) playSound('move');
   el.focus({ preventScroll: true });
   const row = rowOf(el);
   if (row) {

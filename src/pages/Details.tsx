@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
+import { ambientSource, setAmbientBase } from '../fx/ambient';
 import { api, userId } from '../api/client';
 import { ITEM_FIELDS, catalog, isInProgress, representative, sagaChildren } from '../api/catalog';
 import { backdropOf, imageUrl, logoOf } from '../api/images';
@@ -77,6 +78,11 @@ export function Details({ id }: { id: string }) {
     return () => {
       alive = false;
     };
+  }, [id]);
+
+  useEffect(() => {
+    setAmbientBase(ambientSource(cached));
+    return () => setAmbientBase(undefined);
   }, [id]);
 
   const item = full ?? cached;
