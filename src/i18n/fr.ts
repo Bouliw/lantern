@@ -110,7 +110,7 @@ export const fr: Record<StringKey, string> = {
   'settings.motion.off': 'Aucune',
   'settings.motionTv': 'Sur la TV, tout reste instantané.',
   'settings.sounds': 'Sons de l’interface',
-  'rows.top10': 'Top {n} · Les mieux notés',
+  'rows.top10': 'Top · Les mieux notés',
   'player.watching': 'Vous regardez',
   'player.upNext': 'À suivre',
   'settings.saver': 'Économiseur d’écran',

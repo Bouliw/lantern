@@ -37,7 +37,7 @@ export function Home() {
 
   const rows = useMemo(() => (c ? homeRows(c, lang.value) : []), [stamp, lang.value]);
   const hero = useMemo(() => (c ? heroItems(c) : []), [stamp]);
-  const top10 = useMemo(() => (c ? topRated(c, 0).slice(0, 10) : []), [stamp]);
+  const ranked = useMemo(() => (c ? topRated(c, 0.1) : []), [stamp]);
 
   useEffect(() => {
     if (!c) return;
@@ -69,7 +69,7 @@ export function Home() {
         {resume.length > 0 && <Row key="continue" rowKey="continue" title={t('rows.continue')} entries={resume} />}
         {rows.map((r) =>
           r.key === 'top' ? (
-            <Row key="top" rowKey="top" title={t('rows.top10', { n: top10.length })} items={top10} top />
+            <Row key="top" rowKey="top" title={t('rows.top10')} items={ranked} top />
           ) : (
             <Row key={r.key} rowKey={r.key} title={r.title} items={r.items} />
           ),

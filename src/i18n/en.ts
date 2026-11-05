@@ -108,7 +108,7 @@ export const en = {
   'settings.motion.off': 'None',
   'settings.motionTv': 'On TV, everything stays instant.',
   'settings.sounds': 'Interface sounds',
-  'rows.top10': 'Top {n} · Highest rated',
+  'rows.top10': 'Top · Highest rated',
   'player.watching': 'You’re watching',
   'player.upNext': 'Up next',
   'settings.saver': 'Screen saver',
