@@ -19,6 +19,10 @@ export interface Appearance {
   sounds: boolean;
   /** Tint the page with the colors of the artwork on screen. */
   ambient: boolean;
+  /** Generative background music in the style's mood. */
+  music: boolean;
+  /** Animated page changes (computer only). */
+  transitions: boolean;
 }
 
 export const DEFAULT_APPEARANCE: Appearance = {
@@ -30,6 +34,8 @@ export const DEFAULT_APPEARANCE: Appearance = {
   size: 'm',
   sounds: true,
   ambient: true,
+  music: true,
+  transitions: true,
 };
 
 const SCOPE_KEY = 'lantern.appearance.scope';

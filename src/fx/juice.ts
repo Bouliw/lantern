@@ -116,6 +116,27 @@ function release(el: HTMLElement) {
 }
 
 let hoverCard: HTMLElement | null = null;
+let revealer: IntersectionObserver | null = null;
+
+/** Desktop: rows below the fold slide in, cards cascading, as they scroll into view. */
+export function revealOnScroll(el: HTMLElement | null) {
+  if (!el || !hasHover || !juicy() || typeof IntersectionObserver === 'undefined') return;
+  if (el.getBoundingClientRect().top < window.innerHeight) return; // on screen: the regular entrance plays
+  el.classList.add('reveal-wait');
+  revealer ??= new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        const row = e.target as HTMLElement;
+        row.classList.remove('reveal-wait');
+        row.classList.add('reveal-in');
+        revealer!.unobserve(row);
+      }
+    },
+    { rootMargin: '0px 0px -6% 0px' },
+  );
+  revealer.observe(el);
+}
 
 function enterCard(card: HTMLElement) {
   const s = state(card);

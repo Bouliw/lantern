@@ -7,6 +7,7 @@
  *   The app stays visible the whole time; the shapes and colors live in fx.css.
  */
 import { hasHover } from '../platform';
+import { appearance } from '../state/settings';
 
 type Commit = () => void;
 
@@ -15,7 +16,7 @@ let pendingAt = 0;
 let busy = false;
 
 const root = () => document.documentElement;
-const enabled = () => hasHover && root().dataset.motion === 'juicy';
+const enabled = () => hasHover && root().dataset.motion === 'juicy' && appearance.value.transitions;
 const supportsVT = () => typeof (document as any).startViewTransition === 'function';
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 

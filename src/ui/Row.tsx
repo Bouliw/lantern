@@ -4,6 +4,7 @@ import { hasHover } from '../platform';
 import { appearance } from '../state/settings';
 import { t } from '../i18n';
 import { Card, type CardEntry } from './Card';
+import { revealOnScroll } from '../fx/juice';
 import { IconChevronLeft, IconChevronRight } from './icons';
 
 interface Props {
@@ -17,6 +18,8 @@ export function Row({ title, items: plain, entries, rowKey }: Props) {
   const list: CardEntry[] = entries ?? (plain ?? []).map((item) => ({ item }));
   const items = list;
   const track = useRef<HTMLDivElement>(null);
+  const self = useRef<HTMLElement>(null);
+  useLayoutEffect(() => revealOnScroll(self.current), []);
   const [edges, setEdges] = useState({ left: false, right: false });
 
   const update = () => {
@@ -54,7 +57,7 @@ export function Row({ title, items: plain, entries, rowKey }: Props) {
   };
 
   return (
-    <section class="row" data-row data-row-key={rowKey}>
+    <section ref={self} class="row" data-row data-row-key={rowKey}>
       <h2 class="row-title">{title}</h2>
       <div class="row-viewport">
         {hasHover && edges.left && (

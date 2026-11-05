@@ -110,6 +110,8 @@ export const fr: Record<StringKey, string> = {
   'settings.motion.off': 'Aucune',
   'settings.motionTv': 'Sur la TV, tout reste instantané.',
   'settings.sounds': 'Sons de l’interface',
+  'settings.music': 'Musique d’ambiance',
+  'settings.transitions': 'Transitions de page',
   'settings.ambient': 'Couleur ambiante',
   'settings.on': 'Activés',
   'settings.off': 'Désactivés',

@@ -108,6 +108,8 @@ export const en = {
   'settings.motion.off': 'None',
   'settings.motionTv': 'On TV, everything stays instant.',
   'settings.sounds': 'Interface sounds',
+  'settings.music': 'Background music',
+  'settings.transitions': 'Page transitions',
   'settings.ambient': 'Ambient color',
   'settings.on': 'On',
   'settings.off': 'Off',

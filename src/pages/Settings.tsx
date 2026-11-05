@@ -253,6 +253,17 @@ export function Settings() {
           onChange={(motion) => setAppearance({ motion })}
         />
         {isTV && <p class="setting-hint">{t('settings.motionTv')}</p>}
+        {!isTV && (
+          <Segmented
+            label={t('settings.transitions')}
+            value={a.transitions ? 'on' : 'off'}
+            options={[
+              { value: 'on', label: t('settings.on') },
+              { value: 'off', label: t('settings.off') },
+            ]}
+            onChange={(v) => setAppearance({ transitions: v === 'on' })}
+          />
+        )}
         <Segmented
           label={t('settings.sounds')}
           value={a.sounds ? 'on' : 'off'}
@@ -261,6 +272,15 @@ export function Settings() {
             { value: 'off', label: t('settings.off') },
           ]}
           onChange={(v) => setAppearance({ sounds: v === 'on' })}
+        />
+        <Segmented
+          label={t('settings.music')}
+          value={a.music ? 'on' : 'off'}
+          options={[
+            { value: 'on', label: t('settings.on') },
+            { value: 'off', label: t('settings.off') },
+          ]}
+          onChange={(v) => setAppearance({ music: v === 'on' })}
         />
         <Segmented
           label={t('settings.ambient')}

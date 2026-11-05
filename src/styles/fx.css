@@ -323,3 +323,63 @@ html[data-vt="wipe"]::view-transition-new(root) { animation: var(--vt-in) var(--
 /* Keynote: the pages push each other, like slides. */
 @keyframes pushOut { to { transform: translateX(-100%); } }
 @keyframes pushIn { from { transform: translateX(100%); } }
+
+/* ---------- Motion while browsing (desktop, "juicy") ---------- */
+
+[data-platform="desktop"][data-motion="juicy"] .row.reveal-wait { opacity: 0; }
+[data-platform="desktop"][data-motion="juicy"] .row.reveal-in { animation: rowIn 0.75s var(--ease-out) backwards; }
+[data-platform="desktop"][data-motion="juicy"] .row.reveal-in .card { animation: cardRise 0.6s var(--ease-out) backwards; animation-delay: calc(0.08s + var(--i, 0) * 50ms); }
+@keyframes rowIn { from { opacity: 0; transform: translateY(48px); } }
+@keyframes cardRise { from { opacity: 0; transform: translateY(22px) scale(0.95); } }
+
+/* The hero logo floats; title pages slowly zoom like the hero. */
+[data-platform="desktop"][data-motion="juicy"] .hero-text > .hero-logo,
+[data-platform="desktop"][data-motion="juicy"] .hero-text > .hero-title {
+  animation: rise 0.7s var(--ease-out) both, float 7s ease-in-out 0.7s infinite alternate;
+}
+[data-platform="desktop"][data-motion="juicy"] .details-backdrop img { animation: kenBurns 22s ease-out both; }
+@keyframes float { to { transform: translateY(-6px); } }
+
+/* Menu links: an underline that grows on hover. */
+[data-platform="desktop"][data-motion="juicy"] .nav-link {
+  background: linear-gradient(var(--accent), var(--accent)) left bottom / 0 2px no-repeat;
+  transition: color 0.2s, background-size 0.35s var(--ease-out);
+}
+[data-platform="desktop"][data-motion="juicy"] .nav-link:hover { background-size: 100% 2px; }
+
+/* Row titles live a little, each style its own way (slow, out of phase from row to row). */
+[data-platform="desktop"][data-motion="juicy"] .row:nth-child(3n + 2) .row-title,
+[data-platform="desktop"][data-motion="juicy"] .row:nth-child(3n + 2) .row-title::after { animation-delay: -1.7s !important; }
+[data-platform="desktop"][data-motion="juicy"] .row:nth-child(3n) .row-title,
+[data-platform="desktop"][data-motion="juicy"] .row:nth-child(3n) .row-title::after { animation-delay: -3.1s !important; }
+
+/* P5: the title plates sway, like stickers caught in a draft. */
+[data-platform="desktop"][data-motion="juicy"][data-shape="p5"] .row-title,
+[data-platform="desktop"][data-motion="juicy"][data-shape="p5"] .page-title,
+[data-platform="desktop"][data-motion="juicy"][data-shape="p5"] .section-title { animation: p5SwayA 4.6s ease-in-out infinite alternate; }
+[data-platform="desktop"][data-motion="juicy"][data-shape="p5"] .row:nth-child(even) .row-title { animation: p5SwayB 5.4s ease-in-out infinite alternate; }
+@keyframes p5SwayA {
+  from { transform: rotate(-1.5deg) skewX(var(--skew)) translate(0, 0); }
+  to { transform: rotate(-0.3deg) skewX(var(--skew)) translate(5px, -2px); }
+}
+@keyframes p5SwayB {
+  from { transform: rotate(1deg) skewX(var(--skew)) translate(0, 0); }
+  to { transform: rotate(-0.2deg) skewX(var(--skew)) translate(-4px, -2px); }
+}
+
+/* Eva: the orange rule under titles breathes. */
+[data-platform="desktop"][data-motion="juicy"][data-shape="eva"] .row-title::after,
+[data-platform="desktop"][data-motion="juicy"][data-shape="eva"] .page-title::after { transform-origin: left center; animation: evaRule 3.4s ease-in-out infinite alternate; }
+@keyframes evaRule { to { transform: scaleX(1.7); } }
+
+/* Neon: the tube glow swells and settles. */
+[data-platform="desktop"][data-motion="juicy"][data-shape="neon"] .row-title { animation: neonGlow 3s ease-in-out infinite alternate; }
+@keyframes neonGlow { to { text-shadow: 0 0 24px var(--accent), 0 0 3px #fff; } }
+
+/* Y2K, Glass, Keynote: a soft float. */
+[data-platform="desktop"][data-motion="juicy"][data-shape="y2k"] .row-title { display: inline-block; animation: float 3.2s ease-in-out infinite alternate; }
+[data-platform="desktop"][data-motion="juicy"][data-shape="glass"] .row-title { display: inline-block; animation: float 4.6s ease-in-out infinite alternate; }
+[data-platform="desktop"][data-motion="juicy"][data-shape="keynote"] .row-title { display: inline-block; animation: float 5.6s ease-in-out infinite alternate; }
+
+/* Pixel: a blinking cursor after the titles. */
+[data-platform="desktop"][data-motion="juicy"][data-shape="pixel"] .row-title::after { content: "\258C"; margin-left: 0.3em; color: var(--accent); animation: pxBlink 1.1s steps(1) infinite; }

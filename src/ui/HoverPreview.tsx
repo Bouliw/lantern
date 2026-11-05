@@ -17,10 +17,10 @@ interface State {
   rect: DOMRect;
 }
 
-const DELAY = 400;
+const DELAY = 900;
 
 /**
- * Desktop hover card: the card gives a small bounce on hover, and after ~0.4 s a larger
+ * Desktop hover card: the card gives a small bounce on hover, and after ~0.9 s a larger
  * preview opens on top of it with artwork, actions and a short summary.
  */
 export function HoverPreview() {
