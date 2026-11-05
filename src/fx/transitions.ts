@@ -11,6 +11,8 @@ import { t } from '../i18n';
 
 type Commit = () => void;
 
+const SECTIONS = new Set(['series', 'sagas', 'films']);
+
 let pendingArt: HTMLElement | null = null;
 let pendingAt = 0;
 let busy = false;
@@ -92,6 +94,8 @@ export function transition(from: string[], to: string[], commit: Commit) {
   const art = pendingArt && performance.now() - pendingAt < 1500 && pendingArt.isConnected ? pendingArt : null;
   pendingArt = null;
   if (!enabled() || busy || to[0] === 'play' || from[0] === 'play') return commit();
+  // Switching between library sections from the top menu stays instant.
+  if (SECTIONS.has(from[0]) && SECTIONS.has(to[0])) return commit();
   if (to[0] === 'item' && art && supportsVT()) return morph(art, commit);
   if (root().dataset.palette === 'eva') {
     const label = labelFor(to);
