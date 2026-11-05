@@ -137,4 +137,16 @@ export const fr: Record<StringKey, string> = {
   'theme.pixel': 'Pixel',
   'theme.ransom': 'Rançon',
   'theme.custom': 'Personnalisé',
+
+  'rows.continue': 'Reprendre',
+  'details.more': 'Titres similaires',
+  'profiles.quickConnect': 'Se connecter avec un code',
+  'profiles.qcHint': 'Sur un appareil déjà connecté, ouvre Réglages › Connecter un appareil et saisis ce code.',
+  'profiles.qcFailed': "La connexion par code n'est pas disponible sur ce serveur.",
+  'settings.connect': 'Connecter un appareil',
+  'settings.connectHint': 'Saisis le code affiché sur la TV ou sur un autre appareil pour le connecter à ton profil.',
+  'settings.code': 'Code',
+  'settings.approve': 'Connecter',
+  'settings.approved': 'Appareil connecté.',
+  'settings.codeInvalid': "Ce code n'est pas valide ou a expiré.",
 };

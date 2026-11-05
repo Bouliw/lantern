@@ -5,6 +5,9 @@ import {
   normalizeServer,
   pingServer,
   publicUsers,
+  quickConnectEnabled,
+  quickConnectStart,
+  quickConnectWait,
   restoreSession,
   serverUrl,
   signIn,
@@ -25,17 +28,43 @@ export function Profiles({ onServer }: { onServer: () => void }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const pwRef = useRef<HTMLInputElement>(null);
+  const [qcAvailable, setQcAvailable] = useState(false);
+  const [qcCode, setQcCode] = useState<string | null>(null);
+  const qcAbort = useRef<AbortController | null>(null);
 
   const load = () => {
     setFailed(false);
     publicUsers()
       .then(setUsers)
       .catch(() => setFailed(true));
+    quickConnectEnabled().then(setQcAvailable);
   };
   useEffect(load, []);
+  useEffect(() => () => qcAbort.current?.abort(), []);
+
+  const startQuickConnect = async () => {
+    setError('');
+    try {
+      const { Code, Secret } = await quickConnectStart();
+      setQcCode(Code);
+      qcAbort.current?.abort();
+      const ctrl = new AbortController();
+      qcAbort.current = ctrl;
+      await quickConnectWait(Secret, ctrl.signal);
+    } catch {
+      if (!qcAbort.current?.signal.aborted) {
+        setQcCode(null);
+        setError(t('profiles.qcFailed'));
+      }
+    }
+  };
+  const stopQuickConnect = () => {
+    qcAbort.current?.abort();
+    setQcCode(null);
+  };
   useEffect(() => {
     if (isTV) requestAnimationFrame(() => focusFirst());
-  }, [users, picked]);
+  }, [users, picked, qcCode]);
   useEffect(() => {
     if (picked && !isTV) pwRef.current?.focus();
   }, [picked]);
@@ -73,7 +102,19 @@ export function Profiles({ onServer }: { onServer: () => void }) {
       <div class="profiles-brand">
         <LanternMark size={40} />
       </div>
-      {!picked ? (
+      {qcCode ? (
+        <div class="password-form">
+          <h1 class="profiles-title">{t('profiles.quickConnect')}</h1>
+          <p class="qc-code" aria-live="polite">
+            {qcCode}
+          </p>
+          <p class="setting-hint">{t('profiles.qcHint')}</p>
+          <span class="spinner" />
+          <button class="btn btn-ghost" data-nav data-nav-autofocus onClick={stopQuickConnect}>
+            {t('common.back')}
+          </button>
+        </div>
+      ) : !picked ? (
         <>
           <h1 class="profiles-title">{t('profiles.title')}</h1>
           <ul class="profiles-list">
@@ -90,9 +131,17 @@ export function Profiles({ onServer }: { onServer: () => void }) {
               </li>
             ))}
           </ul>
-          <button class="btn btn-ghost profiles-server" data-nav onClick={onServer}>
-            {t('profiles.manageServer')}
-          </button>
+          {error && <p class="form-error">{error}</p>}
+          <div class="button-row">
+            {qcAvailable && (
+              <button class="btn btn-secondary" data-nav onClick={startQuickConnect}>
+                {t('profiles.quickConnect')}
+              </button>
+            )}
+            <button class="btn btn-ghost profiles-server" data-nav onClick={onServer}>
+              {t('profiles.manageServer')}
+            </button>
+          </div>
         </>
       ) : (
         <form

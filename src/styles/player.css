@@ -104,3 +104,20 @@
 .chapter-time { font-variant-numeric: tabular-nums; color: rgba(255, 255, 255, 0.6); }
 [data-platform="desktop"] .chapter:hover { background: rgba(255, 255, 255, 0.12); }
 [data-platform="touch"] .player-menu { left: 4vw; right: 4vw; grid-template-columns: 1fr; bottom: 6rem; }
+
+/* ---------- Additions: continue watching, quick connect, more like this ---------- */
+.card-caption {
+  display: block; margin-top: 0.45rem; padding: 0 0.15rem; color: var(--muted); font-size: 0.85rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.qc-code {
+  font-family: "FX Mono", ui-monospace, monospace; font-weight: 700; font-size: 3.6rem; letter-spacing: 0.25em;
+  padding: 0.3em 0.6em 0.3em 0.85em; border-radius: var(--radius); background: var(--surface); border: 2px solid var(--line);
+}
+.code-input {
+  width: 11rem; padding: 0.6rem 0.9rem; font-size: 1.15rem; letter-spacing: 0.15em; background: var(--surface-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: var(--btn-radius); outline: none;
+}
+.code-input:focus { border-color: var(--focus); }
+.setting-hint.ok { color: #46d36a; }
+.details-more { margin: 0.5rem 0 2rem; }

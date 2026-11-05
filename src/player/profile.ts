@@ -33,8 +33,11 @@ export const caps = {
   nativeHls: can('application/vnd.apple.mpegurl') || can('application/x-mpegURL'),
 };
 
-export function deviceProfile() {
-  const videoCodecs = ['h264', caps.hevc && 'hevc', caps.av1 && 'av1', caps.vp9 && 'vp9'].filter(Boolean).join(',');
+/** `safe`: H.264 only, used as a fallback when the device fails to decode what it claimed to support. */
+export function deviceProfile(opts: { safe?: boolean; maxBitrate?: number } = {}) {
+  const safe = !!opts.safe;
+  const max = opts.maxBitrate ?? 200_000_000;
+  const videoCodecs = safe ? 'h264' : ['h264', caps.hevc && 'hevc', caps.av1 && 'av1', caps.vp9 && 'vp9'].filter(Boolean).join(',');
   const audioCodecs = ['aac', 'mp3', caps.ac3 && 'ac3', caps.eac3 && 'eac3', caps.opus && 'opus', caps.flac && 'flac']
     .filter(Boolean)
     .join(',');
@@ -49,7 +52,7 @@ export function deviceProfile() {
   const hlsAudio = isTV ? ['eac3', 'ac3', 'aac'].filter((c) => c === 'aac' || (caps as any)[c]).join(',') : 'aac';
   return {
     Name: 'Lantern',
-    MaxStreamingBitrate: 200_000_000,
+    MaxStreamingBitrate: max,
     MaxStaticBitrate: 200_000_000,
     MusicStreamingTranscodingBitrate: 384_000,
     DirectPlayProfiles: direct,
@@ -58,7 +61,7 @@ export function deviceProfile() {
         Container: 'mp4',
         Type: 'Video',
         Protocol: 'hls',
-        VideoCodec: caps.hevc ? 'h264,hevc' : 'h264',
+        VideoCodec: caps.hevc && !safe ? 'h264,hevc' : 'h264',
         AudioCodec: hlsAudio,
         MaxAudioChannels: isTV ? '6' : '2',
         Context: 'Streaming',

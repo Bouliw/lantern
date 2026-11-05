@@ -57,7 +57,8 @@ type SavedSessions = Record<string, Omit<Session, 'server' | 'userId'>>;
 
 declare global {
   interface Window {
-    LANTERN_CONFIG?: { server?: string };
+    /** Written into TV packages at build time: Jellyfin address and the Lantern web server (extras). */
+    LANTERN_CONFIG?: { server?: string; web?: string };
   }
 }
 
@@ -224,6 +225,46 @@ export async function signIn(name: string, password: string): Promise<Session> {
     body: { Username: name, Pw: password },
     token: null,
   });
+  return saveSession(res);
+}
+
+// ---- Quick Connect: sign a device in with a code approved from another device ----
+
+export async function quickConnectEnabled(): Promise<boolean> {
+  try {
+    return Boolean(await api<boolean>('/QuickConnect/Enabled', { token: null }));
+  } catch {
+    return false;
+  }
+}
+
+export async function quickConnectStart(): Promise<{ Code: string; Secret: string }> {
+  return api('/QuickConnect/Initiate', { method: 'POST', token: null });
+}
+
+/** Resolves with the session once the code has been approved; rejects if cancelled or expired. */
+export async function quickConnectWait(secret: string, signal: AbortSignal): Promise<Session> {
+  while (!signal.aborted) {
+    await new Promise((r) => setTimeout(r, 3000));
+    if (signal.aborted) break;
+    const state = await api<{ Authenticated: boolean }>('/QuickConnect/Connect', { query: { Secret: secret }, token: null });
+    if (state.Authenticated) {
+      const res = await api<AuthResult>('/Users/AuthenticateWithQuickConnect', { method: 'POST', body: { Secret: secret }, token: null });
+      return saveSession(res);
+    }
+  }
+  throw new Error('cancelled');
+}
+
+export async function quickConnectApprove(code: string): Promise<boolean> {
+  try {
+    return Boolean(await api<boolean>('/QuickConnect/Authorize', { method: 'POST', query: { Code: code.trim(), UserId: userId() } }));
+  } catch {
+    return false;
+  }
+}
+
+function saveSession(res: AuthResult): Session {
   const s: Session = {
     server: serverUrl.value!,
     userId: res.User.Id,

@@ -1,18 +1,38 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
-import { catalog } from '../api/catalog';
+import { catalog, type Catalog } from '../api/catalog';
+import { api, userId } from '../api/client';
+import type { ItemsResult } from '../api/types';
 import { lang, t } from '../i18n';
 import { appearance } from '../state/settings';
 import { heroItems, homeRows } from '../home/rows';
 import { becauseYouWatched, type RecoRow } from '../reco/engine';
-import { cardImageUrls } from '../ui/Card';
+import { cardImageUrls, type CardEntry } from '../ui/Card';
 import { preloadQueue } from '../api/images';
 import { Hero } from '../ui/Hero';
 import { Row } from '../ui/Row';
 import { Loading } from '../ui/Loading';
 
+/** In-progress movies and episodes; an episode is shown with its series artwork. */
+async function continueWatching(c: Catalog): Promise<CardEntry[]> {
+  const res = await api<ItemsResult>(`/Users/${userId()}/Items/Resume`, {
+    query: { Limit: 20, MediaTypes: 'Video', Fields: 'SeriesId', EnableTotalRecordCount: false },
+  });
+  const seen = new Set<string>();
+  const out: CardEntry[] = [];
+  for (const it of res.Items) {
+    const unit = it.Type === 'Episode' && it.SeriesId ? c.byId.get(it.SeriesId) : c.byId.get(it.Id);
+    if (!unit || seen.has(unit.Id)) continue;
+    seen.add(unit.Id);
+    const caption = it.Type === 'Episode' ? `${it.IndexNumber != null ? it.IndexNumber + '. ' : ''}${it.Name}` : undefined;
+    out.push({ item: unit, play: it, caption });
+  }
+  return out;
+}
+
 export function Home() {
   const c = catalog.value;
   const [reco, setReco] = useState<RecoRow[]>([]);
+  const [resume, setResume] = useState<CardEntry[]>([]);
   const stamp = c ? c.key + c.fetchedAt : '';
 
   const rows = useMemo(() => (c ? homeRows(c, lang.value) : []), [stamp, lang.value]);
@@ -21,6 +41,9 @@ export function Home() {
   useEffect(() => {
     if (!c) return;
     let alive = true;
+    continueWatching(c)
+      .then((r) => alive && setResume(r))
+      .catch(() => {});
     becauseYouWatched(c)
       .then((r) => alive && setReco(r))
       .catch(() => {});
@@ -42,6 +65,7 @@ export function Home() {
     <main class="page home">
       <Hero items={hero} />
       <div class="rows">
+        {resume.length > 0 && <Row key="continue" rowKey="continue" title={t('rows.continue')} entries={resume} />}
         {rows.map((r) => (
           <Row key={r.key} rowKey={r.key} title={r.title} items={r.items} />
         ))}

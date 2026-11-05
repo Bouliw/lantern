@@ -38,21 +38,27 @@ export function cardImageUrls(item: Item): (string | undefined)[] {
   return [imageUrl(art.image, w), imageUrl(art.logo, 240)];
 }
 
-interface Props {
+export interface CardEntry {
   item: Item;
+  /** When set, the card starts playback of this item (e.g. the episode to resume). */
+  play?: Item;
+  caption?: string;
+}
+
+interface Props extends CardEntry {
   rowKey: string;
   index: number;
 }
 
-export function Card({ item, rowKey, index }: Props) {
+export function Card({ item, rowKey, index, play, caption }: Props) {
   const a = appearance.value;
   const art = cardArt(item, a.cards);
   const w = WIDTH[a.cards][a.size];
-  const progress = item.Type === 'Movie' ? progressOf(item) : 0;
+  const progress = play ? progressOf(play) : item.Type === 'Movie' ? progressOf(item) : 0;
   return (
     <a
-      class="card"
-      href={hrefItem(item.Id)}
+      class={'card' + (caption ? ' has-caption' : '')}
+      href={play ? `#/play/${play.Id}` : hrefItem(item.Id)}
       data-nav
       data-card={item.Id}
       data-key={`${rowKey}:${item.Id}`}
@@ -69,6 +75,7 @@ export function Card({ item, rowKey, index }: Props) {
           </span>
         )}
       </div>
+      {caption && <span class="card-caption">{caption}</span>}
     </a>
   );
 }

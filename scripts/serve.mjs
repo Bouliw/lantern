@@ -2,7 +2,7 @@
 // Tiny dependency-free static server for the built app (dist/).
 // Usage: node scripts/serve.mjs [--port 8097] [--dir dist]
 import { createServer } from 'node:http';
-import { createReadStream, statSync } from 'node:fs';
+import { createReadStream, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
 import { createGzip } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
@@ -33,8 +33,25 @@ const TYPES = {
 };
 const COMPRESS = new Set(['.html', '.js', '.mjs', '.css', '.json', '.webmanifest', '.svg', '.txt']);
 
+// Optional summaries file produced by scripts/localize-overviews.mjs (read by TVs too, hence CORS).
+const overviews = opt('overviews', null);
+
 createServer((req, res) => {
   let path = decodeURIComponent((req.url || '/').split('?')[0]);
+  if (path === '/overviews.json' && overviews) {
+    try {
+      const body = readFileSync(overviews);
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
+      });
+      res.end(body);
+    } catch {
+      res.writeHead(404, { 'Access-Control-Allow-Origin': '*' }).end();
+    }
+    return;
+  }
   if (path.endsWith('/')) path += 'index.html';
   const file = normalize(join(root, path));
   if (!file.startsWith(root)) {

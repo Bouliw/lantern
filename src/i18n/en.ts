@@ -135,6 +135,18 @@ export const en = {
   'theme.pixel': 'Pixel',
   'theme.ransom': 'Ransom',
   'theme.custom': 'Custom',
+
+  'rows.continue': 'Continue watching',
+  'details.more': 'More like this',
+  'profiles.quickConnect': 'Sign in with a code',
+  'profiles.qcHint': 'On a device that is already signed in, open Settings › Connect a device and enter this code.',
+  'profiles.qcFailed': 'Quick Connect is not available on this server.',
+  'settings.connect': 'Connect a device',
+  'settings.connectHint': 'Enter the code shown on the TV or another device to sign it in to your profile.',
+  'settings.code': 'Code',
+  'settings.approve': 'Connect',
+  'settings.approved': 'Device connected.',
+  'settings.codeInvalid': 'This code is not valid or has expired.',
 };
 
 export type StringKey = keyof typeof en;

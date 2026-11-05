@@ -2,13 +2,15 @@
 
 A fast, Netflix-style client for [Jellyfin](https://jellyfin.org). One small web app that runs on a desktop browser, on LG webOS TVs and on phones, with Jellyfin staying the engine behind it.
 
-- **Home that feels like a streaming service**: a rotating banner (fade, arrows, dots, logo, summary, Play and More info), then rows for recently added titles, movies, series, sagas, top rated and genres, then "Because you watched…" rows.
+- **Home that feels like a streaming service**: a rotating banner (fade, arrows, dots, logo, summary, Play and More info), then Continue watching, recently added titles, movies, series, sagas, top rated and genres, then "Because you watched…" rows. Title pages end with "More like this".
 - **Sagas, not piles of sequels**: movies that belong to a Jellyfin collection are grouped into one saga card, with its own page listing the films in release order.
 - **Parts instead of seasons** when a show's seasons have their own names (a TV run, a film, a film series). Extras are shown like a season of their own on the movie page.
 - **Its own player**: direct play when the device can, otherwise HLS through Jellyfin (remux first, transcode only when needed). Audio and subtitle choice, resume, next episode, skip intro / credits (media segments), scrubbing previews (trickplay) and chapters.
 - **Recommendations computed on the device** from genres, directors, writers, cast, studios, tags, decade and title words (TF-IDF + cosine similarity), blended with the viewer's history and Jellyfin's own "similar" list.
 - **Styles**: a sober default plus Title Card, Chrome, Neon, Glass, Keynote, Pixel and Ransom. Colors, typography and shapes can be mixed in a custom style, with accent color, animation level, card shape and size. Appearance can follow the profile across devices or stay on one device.
-- **English and French**, following the device language or set by hand.
+- **English and French**, following the device language or set by hand, including summaries (see below).
+- **Sign in on the TV with a code**: Jellyfin Quick Connect, approved from Settings on any signed-in device.
+- **Resilient playback**: if a device fails to decode what it claimed to support, the player retries through hls.js, then as a plain H.264 transcode.
 - **Built for each screen**: native trackpad scrolling and lively hover previews on desktop; instant, focus-following navigation with no blur on TV; touch layout on phones.
 - **No CDN, no tracking**: fonts are bundled, artwork is preloaded and cached on the device.
 
@@ -49,6 +51,20 @@ This builds a package (`out/*.ipk`), installs it and launches it. The server add
 ```json
 { "server": "http://192.168.1.10:8096", "device": "tv" }
 ```
+
+### Summaries in the interface language
+
+Jellyfin keeps one summary per title, in the library's metadata language. To show summaries in the
+other interface language too, run this on the server machine (administrator API key needed):
+
+```sh
+node scripts/localize-overviews.mjs --server http://localhost:8096 --token-file <api-key-file> \
+  --out ~/Library/Application\ Support/Lantern/overviews.json --langs en,fr
+```
+
+It asks Jellyfin's own metadata providers for the missing languages, keeps what it already has (so
+it is cheap to run on a schedule) and leaves locked, hand-written summaries alone. The macOS service
+serves the file to every device, TVs included.
 
 ### Phones
 

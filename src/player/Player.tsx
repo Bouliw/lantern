@@ -6,7 +6,7 @@ import type { Item, ItemsResult, MediaSegment, MediaSource, MediaStream, Trickpl
 import { TICKS_PER_SECOND } from '../api/types';
 import { formatClock, t } from '../i18n';
 import { KEY, focusElement, focusFirst, isBackKey, pushKeyHandler } from '../nav/spatial';
-import { hasHover, isIOS, isTV } from '../platform';
+import { hasHover, isAppleWebKit, isIOS, isTV } from '../platform';
 import { goBack, navigate } from '../router';
 import { Img } from '../ui/Img';
 import {
@@ -40,6 +40,20 @@ interface Stream {
 
 const HIDE_AFTER = 3500;
 const ticks = (s: number) => Math.max(0, Math.floor(s * TICKS_PER_SECOND));
+
+/**
+ * External text subtitles are fetched as WebVTT and drawn by the app. Picture subtitles, and
+ * subtitles stored inside the video file, are burned in by the server: extracting them would
+ * mean reading the whole file first, which is slow on external or SD-card storage.
+ */
+function needsBurnIn(s: MediaStream): boolean {
+  return !s.IsTextSubtitleStream || !s.IsExternal;
+}
+
+function fileDefaultAudio(it: Item): number | undefined {
+  const audio = (it.MediaStreams ?? []).filter((s) => s.Type === 'Audio');
+  return (audio.find((s) => s.IsDefault) ?? audio[0])?.Index;
+}
 
 function streamLabel(s: MediaStream): string {
   return s.DisplayTitle || s.Title || s.Language || `#${s.Index}`;
@@ -110,6 +124,13 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
   const [fullscreen, setFullscreen] = useState(false);
 
   const pendingStart = useRef<number>(0);
+  const safeMode = useRef(false);
+  const forceHlsJs = useRef(false);
+  const nativeHls = useRef(false);
+  const watchdog = useRef<ReturnType<typeof setTimeout>>();
+  const seekGuard = useRef<ReturnType<typeof setTimeout>>();
+  /** Set when the device ignores seeks in a direct-played file (e.g. no index in the file). */
+  const directSeekBroken = useRef(false);
   const started = useRef(false);
   const lastReport = useRef(0);
   const hideTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -172,11 +193,20 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
     destroyHls();
     pendingStart.current = at;
     const isHls = /\.m3u8/i.test(url);
-    if (isHls && !caps.nativeHls) {
+    // Safari and TVs play HLS natively first; elsewhere hls.js is more dependable.
+    const useHlsJs = isHls && (!caps.nativeHls || (!isAppleWebKit && !isTV) || forceHlsJs.current);
+    nativeHls.current = isHls && !useHlsJs;
+    // A stream that never starts is treated as a failure.
+    clearTimeout(watchdog.current);
+    watchdog.current = setTimeout(() => {
+      const el = video.current;
+      if (el && el.readyState < 3 && !el.paused) fail();
+    }, 25_000);
+    if (useHlsJs) {
       const { default: Hls } = await import('hls.js');
       if (Hls.isSupported()) {
         const h = new Hls({ startPosition: at, maxBufferLength: 40, backBufferLength: 30 });
-        h.on(Hls.Events.ERROR, (_e: unknown, data: { fatal?: boolean }) => data.fatal && setError(true));
+        h.on(Hls.Events.ERROR, (_e: unknown, data: { fatal?: boolean }) => data.fatal && fail());
         h.loadSource(url);
         h.attachMedia(v);
         hls.current = h;
@@ -185,33 +215,81 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
     v.play().catch(() => setPaused(true));
   };
 
+  /**
+   * Some files cannot be seeked when played directly (no index); if a seek is ignored, the same
+   * position is served by the server instead, which can always seek.
+   */
+  const guardSeek = (target: number) => {
+    const s = st.current.stream;
+    if (!s || s.method !== 'DirectPlay' || target < 1) return;
+    clearTimeout(seekGuard.current);
+    seekGuard.current = setTimeout(() => {
+      const v = video.current;
+      if (!v || v.seeking || Math.abs(v.currentTime - target) < 5) return;
+      directSeekBroken.current = true;
+      void start(target, s.audio, s.burned);
+    }, 2500);
+  };
+
+  /** A stream that fails to decode is retried once as a plain H.264 transcode. */
+  const fail = () => {
+    const v = video.current;
+    clearTimeout(watchdog.current);
+    console.warn('lantern: playback failed', v?.error?.code ?? 'hls', safeMode.current ? '(safe mode)' : '');
+    const s = st.current.stream;
+    const at = v?.currentTime || pendingStart.current || 0;
+    // 1. native HLS failed: same stream through hls.js. 2. Then a plain H.264 transcode.
+    if (nativeHls.current && !forceHlsJs.current && st.current.item) {
+      forceHlsJs.current = true;
+      void start(at, s?.audio, s?.burned ?? -1);
+      return;
+    }
+    if (!safeMode.current && st.current.item) {
+      safeMode.current = true;
+      void start(at, s?.audio, s?.burned ?? -1);
+      return;
+    }
+    setError(true);
+    setWaiting(false);
+  };
+
   const start = async (at: number, audio?: number, sub = -1) => {
     const it = st.current.item;
     if (!it) return;
     setWaiting(true);
     setError(false);
-    const defaultAudio = st.current.stream?.source.DefaultAudioStreamIndex ?? it.MediaSources?.[0]?.DefaultAudioStreamIndex;
+    const safe = safeMode.current;
+    // The track flagged as default in the file is what direct play uses; ask for it explicitly
+    // so a remux or transcode keeps the same language.
+    const defaultAudio = fileDefaultAudio(it);
+    if (audio == null) audio = defaultAudio;
     const subStream = it.MediaStreams?.find((s) => s.Type === 'Subtitle' && s.Index === sub);
-    const burn = sub >= 0 && !!subStream && !subStream.IsTextSubtitleStream;
-    const noDirect = burn || (audio != null && defaultAudio != null && audio !== defaultAudio);
+    const burn = sub >= 0 && !!subStream && needsBurnIn(subStream);
+    const noDirect =
+      safe || burn || directSeekBroken.current || (audio != null && defaultAudio != null && audio !== defaultAudio);
+    // When the video has to be re-encoded, ask for a bitrate that fits its size: hardware
+    // encoders refuse absurd targets (e.g. 200 Mb/s for a DVD-sized picture).
+    const height = it.MediaStreams?.find((s) => s.Type === 'Video')?.Height ?? 1080;
+    const encodeRate = height <= 576 ? 8_000_000 : height <= 720 ? 12_000_000 : height <= 1080 ? 20_000_000 : 50_000_000;
+    const maxRate = safe || burn ? encodeRate : 200_000_000;
     try {
       const info = await api<{ MediaSources: MediaSource[]; PlaySessionId: string }>(`/Items/${id}/PlaybackInfo`, {
         method: 'POST',
         query: { UserId: userId() },
         body: {
           UserId: userId(),
-          DeviceProfile: deviceProfile(),
+          DeviceProfile: deviceProfile({ safe, maxBitrate: maxRate }),
           StartTimeTicks: ticks(at),
           MediaSourceId: it.MediaSources?.[0]?.Id,
           AudioStreamIndex: audio,
           SubtitleStreamIndex: burn ? sub : -1,
           EnableDirectPlay: !noDirect,
-          EnableDirectStream: true,
+          EnableDirectStream: !safe,
           EnableTranscoding: true,
-          AllowVideoStreamCopy: true,
+          AllowVideoStreamCopy: !safe,
           AllowAudioStreamCopy: true,
           AutoOpenLiveStream: true,
-          MaxStreamingBitrate: 200_000_000,
+          MaxStreamingBitrate: maxRate,
         },
       });
       const src = info.MediaSources[0];
@@ -229,7 +307,12 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
         method = 'DirectPlay';
       } else if (src.TranscodingUrl) {
         // Always start the playlist at 0 and seek, so the timeline stays absolute.
-        url = serverUrl.value + src.TranscodingUrl.replace(/([?&])StartTimeTicks=\d+&?/i, '$1');
+        // Hardware H.264 encoders reject low levels inherited from old sources (e.g. 3.0 for a
+        // DVD rip); 4.0 is accepted everywhere and still plays on every device.
+        url = (serverUrl.value + src.TranscodingUrl.replace(/([?&])StartTimeTicks=\d+&?/i, '$1')).replace(
+          /h264-level=(\d+)/i,
+          (_m, n) => `h264-level=${Math.max(Number(n), 40)}`,
+        );
         method = /videocodec=copy|AllowVideoStreamCopy=true/i.test(src.TranscodingUrl) && !burn ? 'DirectStream' : 'Transcode';
       } else throw new Error('no stream');
       stopReport();
@@ -282,6 +365,8 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
       destroyHls();
       clearTimeout(hideTimer.current);
       clearTimeout(seekTimer.current);
+      clearTimeout(watchdog.current);
+      clearTimeout(seekGuard.current);
       void loadCatalog(true);
     };
   }, [id]);
@@ -290,11 +375,18 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
 
   useEffect(() => {
     const v = video.current!;
+    // Some TVs ignore a seek made before the media can play: retry until the start point is reached.
+    const applyStart = () => {
+      const at = pendingStart.current;
+      if (at <= 0) return;
+      if (Math.abs(v.currentTime - at) > 2) {
+        v.currentTime = at;
+        guardSeek(at);
+      } else pendingStart.current = 0;
+    };
     const onMeta = () => {
       setDuration(v.duration || (st.current.item?.RunTimeTicks ?? 0) / TICKS_PER_SECOND);
-      const at = pendingStart.current;
-      if (at > 0 && Math.abs(v.currentTime - at) > 2) v.currentTime = at;
-      pendingStart.current = 0;
+      applyStart();
     };
     const onTime = () => {
       setTime(v.currentTime);
@@ -306,6 +398,7 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
       }
     };
     const onPlaying = () => {
+      clearTimeout(watchdog.current);
       setWaiting(false);
       setPaused(false);
       if (!started.current && st.current.stream) {
@@ -324,7 +417,13 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
       if (started.current) void report('/Sessions/Playing/Progress', { EventName: 'Unpause' });
     };
     const onWaiting = () => setWaiting(true);
-    const onCanPlay = () => setWaiting(false);
+    const onCanPlay = () => {
+      setWaiting(false);
+      applyStart();
+    };
+    const onSeeked = () => {
+      if (pendingStart.current && Math.abs(v.currentTime - pendingStart.current) < 3) pendingStart.current = 0;
+    };
     const onVolume = () => {
       setVolume(v.volume);
       setMuted(v.muted);
@@ -334,7 +433,10 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
       else exit();
     };
     const onError = () => {
-      if (v.error && v.src) setError(true);
+      // With hls.js, decoding errors arrive through hls.js; element errors there are leftovers
+      // of the previous source being torn down. Aborts are not failures either.
+      if (hls.current || !v.error || v.error.code === 1 || !v.currentSrc) return;
+      fail();
     };
     const events: [string, () => void][] = [
       ['loadedmetadata', onMeta],
@@ -344,6 +446,7 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
       ['play', onPlay],
       ['waiting', onWaiting],
       ['canplay', onCanPlay],
+      ['seeked', onSeeked],
       ['volumechange', onVolume],
       ['ended', onEnded],
       ['error', onError],
@@ -395,6 +498,7 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
     const v = video.current!;
     const max = (duration || v.duration || 0) - 0.5;
     v.currentTime = Math.max(0, Math.min(s, max > 0 ? max : s));
+    guardSeek(v.currentTime);
     setTime(v.currentTime);
     poke();
   };
@@ -439,7 +543,7 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
   const chooseAudio = (index: number) => {
     setMenu(null);
     const s = st.current.stream;
-    if (!s || (s.audio ?? s.source.DefaultAudioStreamIndex) === index) return;
+    if (!s || s.audio === index) return;
     void start(video.current?.currentTime ?? 0, index, s.burned);
   };
 
@@ -457,7 +561,7 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
       return;
     }
     const meta = s.source.MediaStreams.find((x) => x.Type === 'Subtitle' && x.Index === index);
-    if (meta && !meta.IsTextSubtitleStream) {
+    if (meta && needsBurnIn(meta)) {
       void start(at, s.audio, index);
       return;
     }
@@ -596,7 +700,7 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
 
   const audioTracks = stream?.source.MediaStreams.filter((s) => s.Type === 'Audio') ?? [];
   const subTracks = stream?.source.MediaStreams.filter((s) => s.Type === 'Subtitle') ?? [];
-  const currentAudio = stream?.audio ?? stream?.source.DefaultAudioStreamIndex;
+  const currentAudio = stream?.audio;
 
   const title = item
     ? item.Type === 'Episode'

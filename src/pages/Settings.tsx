@@ -1,5 +1,6 @@
 import type { ComponentChildren } from 'preact';
-import { APP_VERSION, leaveProfile, serverUrl, session, signOut } from '../api/client';
+import { useState } from 'preact/hooks';
+import { APP_VERSION, leaveProfile, quickConnectApprove, serverUrl, session, signOut } from '../api/client';
 import { clearCatalog } from '../api/catalog';
 import { lang, langPref, t, type LangPref, type StringKey } from '../i18n';
 import { isTV } from '../platform';
@@ -183,6 +184,45 @@ function AccentPicker({ a }: { a: Appearance }) {
   );
 }
 
+function ConnectDevice() {
+  const [code, setCode] = useState('');
+  const [state, setState] = useState<'idle' | 'busy' | 'ok' | 'bad'>('idle');
+  return (
+    <form
+      class="connect-form"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!code.trim()) return;
+        setState('busy');
+        setState((await quickConnectApprove(code)) ? 'ok' : 'bad');
+        setCode('');
+      }}
+    >
+      <p class="setting-hint">{t('settings.connectHint')}</p>
+      <div class="button-row">
+        <input
+          class="code-input"
+          inputMode="numeric"
+          autocomplete="one-time-code"
+          data-nav
+          placeholder={t('settings.code')}
+          value={code}
+          onInput={(e) => {
+            setCode((e.target as HTMLInputElement).value);
+            setState('idle');
+          }}
+          aria-label={t('settings.code')}
+        />
+        <button type="submit" class="btn btn-secondary" data-nav disabled={state === 'busy' || !code.trim()}>
+          {t('settings.approve')}
+        </button>
+      </div>
+      {state === 'ok' && <p class="setting-hint ok">{t('settings.approved')}</p>}
+      {state === 'bad' && <p class="form-error">{t('settings.codeInvalid')}</p>}
+    </form>
+  );
+}
+
 export function Settings() {
   const a = appearance.value;
   const s = session.value;
@@ -279,6 +319,10 @@ export function Settings() {
             {t('profiles.signOut')}
           </button>
         </div>
+      </Section>
+
+      <Section title={t('settings.connect')}>
+        <ConnectDevice />
       </Section>
 
       <Section title={t('settings.server')}>

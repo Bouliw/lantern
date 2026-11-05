@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect } from 'preact/hooks';
 import { serverUrl, session, setServer } from './api/client';
 import { catalog, catalogError, loadCatalog } from './api/catalog';
 import { loadProfileAppearance } from './state/settings';
+import { loadOverviews } from './api/overviews';
 import { recall, route, goBack } from './router';
 import { t } from './i18n';
 import { isTV } from './platform';
@@ -47,6 +48,7 @@ export function App() {
     if (!s) return;
     void loadCatalog();
     void loadProfileAppearance();
+    void loadOverviews();
   }, [s?.userId, s?.token]);
 
   // Refresh when coming back to the app (watched state, new arrivals).
@@ -76,7 +78,9 @@ export function App() {
     if (r.parts[0] === 'play') return;
     const mem = recall(r.key);
     window.scrollTo(0, mem?.scrollY ?? 0);
-    if (isTV) {
+    // Coming from the top menu: keep the focus there, so switching category is one press away.
+    const fromHeader = !!(document.activeElement as HTMLElement | null)?.closest?.('[data-nav-fixed]');
+    if (isTV && !fromHeader) {
       requestAnimationFrame(() => {
         if (!focusByKey(mem?.focusKey)) focusFirst();
         if (mem) window.scrollTo(0, mem.scrollY);

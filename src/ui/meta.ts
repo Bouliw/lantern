@@ -2,6 +2,7 @@ import { representative, sagaChildren } from '../api/catalog';
 import type { Item } from '../api/types';
 import { formatRuntime, lang, t } from '../i18n';
 import { genreLabel } from '../i18n/genres';
+import { localizedOverview } from '../api/overviews';
 
 export function yearLabel(item: Item): string {
   if (item.Type === 'BoxSet') {
@@ -44,7 +45,11 @@ export function genres(item: Item, max = 3): string[] {
 }
 
 export function overviewOf(item: Item): string {
-  return item.Overview || representative(item)?.Overview || '';
+  const l = lang.value;
+  const rep = representative(item);
+  return (
+    localizedOverview(item.Id, l) || item.Overview || localizedOverview(rep?.Id, l) || rep?.Overview || ''
+  );
 }
 
 export function progressOf(item: Item): number {

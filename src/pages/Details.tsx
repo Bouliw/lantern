@@ -7,7 +7,9 @@ import { formatRuntime, lang, t } from '../i18n';
 import { genreLabel } from '../i18n/genres';
 import { navigate } from '../router';
 import { nextEpisode } from '../player/launch';
+import { recommender } from '../reco/engine';
 import { EpisodeList } from '../ui/EpisodeList';
+import { Row } from '../ui/Row';
 import { Img } from '../ui/Img';
 import { IconPlay, IconReplay10, IconStar } from '../ui/icons';
 import { Loading, Message } from '../ui/Loading';
@@ -150,9 +152,37 @@ export function Details({ id }: { id: string }) {
         {item.Type === 'Series' && seasons && <SeriesEpisodes series={item} seasons={seasons} parts={parts} initial={next?.SeasonId} />}
         {item.Type === 'BoxSet' && <SagaFilms saga={item} />}
         {item.Type === 'Movie' && extras.length > 0 && <Extras movie={item} extras={extras} />}
+      </div>
+      <MoreLikeThis item={item} />
+      <div class="details-body">
         <Credits item={item} />
       </div>
     </main>
+  );
+}
+
+function MoreLikeThis({ item }: { item: Item }) {
+  const c = catalog.value;
+  const [items, setItems] = useState<Item[]>([]);
+  useEffect(() => {
+    if (!c || !c.byId.has(item.Id)) return;
+    let alive = true;
+    const engine = recommender(c);
+    setItems(engine.similarTo(item, new Map(), new Set()));
+    api<ItemsResult>(`/Items/${item.Id}/Similar`, { query: { userId: userId(), limit: 12 } })
+      .then((r) => {
+        if (alive) setItems(engine.similarTo(item, new Map(), new Set(r.Items.map((i) => c.sagaOf.get(i.Id) ?? i.Id))));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [item.Id, c?.fetchedAt]);
+  if (!items.length) return null;
+  return (
+    <div class="details-more">
+      <Row rowKey={`more-${item.Id}`} title={t('details.more')} items={items} />
+    </div>
   );
 }
 

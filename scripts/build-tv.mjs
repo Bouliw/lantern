@@ -24,6 +24,12 @@ if (!server) {
   console.error('Missing --server (the address of your Jellyfin server as seen from the TV).');
   process.exit(1);
 }
+// Where the Lantern web server runs (for extras such as translated summaries); defaults to the
+// Jellyfin host on port 8097.
+const web = opt('web') ?? local.web ?? (() => {
+  const u = new URL(server);
+  return `${u.protocol}//${u.hostname}:8097`;
+})();
 
 const run = (cmd, argv) => execFileSync(cmd, argv, { cwd: root, stdio: 'inherit' });
 
@@ -39,7 +45,7 @@ for (const f of ['icon.png', 'largeIcon.png']) copyFileSync(join(root, 'webos', 
 const indexPath = join(out, 'index.html');
 const html = readFileSync(indexPath, 'utf8').replace(
   '<head>',
-  `<head>\n    <script>window.LANTERN_CONFIG = ${JSON.stringify({ server })};</script>`,
+  `<head>\n    <script>window.LANTERN_CONFIG = ${JSON.stringify({ server, web })};</script>`,
 );
 writeFileSync(indexPath, html);
 

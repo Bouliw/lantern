@@ -3,16 +3,19 @@ import type { Item } from '../api/types';
 import { hasHover } from '../platform';
 import { appearance } from '../state/settings';
 import { t } from '../i18n';
-import { Card } from './Card';
+import { Card, type CardEntry } from './Card';
 import { IconChevronLeft, IconChevronRight } from './icons';
 
 interface Props {
   title: string;
-  items: Item[];
+  items?: Item[];
+  entries?: CardEntry[];
   rowKey: string;
 }
 
-export function Row({ title, items, rowKey }: Props) {
+export function Row({ title, items: plain, entries, rowKey }: Props) {
+  const list: CardEntry[] = entries ?? (plain ?? []).map((item) => ({ item }));
+  const items = list;
   const track = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ left: false, right: false });
 
@@ -60,8 +63,8 @@ export function Row({ title, items, rowKey }: Props) {
           </button>
         )}
         <div class="row-track" data-row-track ref={track} onScroll={onScroll}>
-          {items.map((it, i) => (
-            <Card key={it.Id} item={it} rowKey={rowKey} index={i} />
+          {items.map((e, i) => (
+            <Card key={(e.play ?? e.item).Id} {...e} rowKey={rowKey} index={i} />
           ))}
         </div>
         {hasHover && edges.right && (

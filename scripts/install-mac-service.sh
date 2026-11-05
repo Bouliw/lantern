@@ -22,6 +22,7 @@ NODE="$(command -v node)"
 mkdir -p "$APP" "$HOME/Library/LaunchAgents" "$HOME/Library/Logs"
 rsync -a --delete "$SRC/dist/" "$APP/web/"
 cp "$SRC/scripts/serve.mjs" "$APP/serve.mjs"
+cp "$SRC/scripts/localize-overviews.mjs" "$APP/localize-overviews.mjs"
 
 cat > "$PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -35,6 +36,7 @@ cat > "$PLIST" <<EOF
     <string>$APP/serve.mjs</string>
     <string>--dir</string><string>$APP/web</string>
     <string>--port</string><string>$PORT</string>
+    <string>--overviews</string><string>$APP/overviews.json</string>
   </array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
