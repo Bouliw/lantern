@@ -1,4 +1,5 @@
 import { useMemo } from 'preact/hooks';
+import { SplitText } from '../ui/SplitText';
 import { catalog } from '../api/catalog';
 import { t } from '../i18n';
 import { Card } from '../ui/Card';
@@ -16,7 +17,7 @@ export function Library({ kind }: { kind: LibraryKind }) {
   if (!c) return <Loading />;
   return (
     <main class="page library">
-      <h1 class="page-title">{t(`nav.${kind}`)}</h1>
+      <h1 class="page-title" key={kind}><SplitText text={t(`nav.${kind}`)} /></h1>
       <div class="grid">
         {items.map((it, i) => (
           <Card key={it.Id} item={it} rowKey={kind} index={i} />

@@ -135,6 +135,11 @@ const SONGS: Record<string, Song> = {
 };
 
 const LEVEL = 0.45;
+/** Page mood: quieter and sparser on a title page, full on the home page and libraries. */
+let mood = 1;
+let density = 1;
+/** Ducking while a live thumbnail plays. */
+let duck = 1;
 
 function play(voice: Voice, t: number, m: number, dur: number, vel: number) {
   const out = musicBus!;
@@ -195,7 +200,7 @@ function schedule(s: Song, step: number, t: number, state: { idx: number; pool: 
 
   if (s.hats && step % 2) hat(out, at, s.hats);
 
-  if (s.arp && step % s.arp.every === 0) {
+  if (s.arp && step % s.arp.every === 0 && (density === 1 || step % (s.arp.every * 2) === 0)) {
     const tones = [...chord].sort((a, b) => a - b);
     const i = (step / s.arp.every) % (tones.length * 2 - 2);
     const up = i < tones.length ? i : tones.length * 2 - 2 - i; // up and down
@@ -203,7 +208,7 @@ function schedule(s: Song, step: number, t: number, state: { idx: number; pool: 
   }
 
   const strong = inBar % 2 === 0;
-  if (Math.random() < s.lead.prob * (strong ? 1.3 : 0.6)) {
+  if (Math.random() < s.lead.prob * density * (strong ? 1.3 : 0.6)) {
     const { pool } = state;
     state.idx = Math.max(0, Math.min(pool.length - 1, state.idx + [-2, -1, -1, 1, 1, 2][Math.floor(Math.random() * 6)]));
     let m = pool[state.idx];
@@ -249,7 +254,7 @@ function begin(key: string) {
       step++;
     }
   }, 60);
-  fadeTo(LEVEL, 3);
+  fadeTo(LEVEL * mood * duck, 3);
   current = {
     key,
     stop: () => {
@@ -262,6 +267,13 @@ function begin(key: string) {
 function sync() {
   if (!ctx || !musicBus) return;
   const a = appearance.value;
+  const page = route.value.parts[0];
+  const nextMood = page === 'item' ? 0.6 : page === 'settings' || page === 'search' ? 0.8 : 1;
+  density = page === 'item' ? 0.5 : 1;
+  if (nextMood !== mood) {
+    mood = nextMood;
+    if (current) fadeTo(LEVEL * mood * duck, 1.6);
+  }
   const want = a.music && route.value.parts[0] !== 'play' && !document.hidden;
   const key = resolvedParts(a).palette;
   if (!want) {
@@ -285,4 +297,12 @@ export function initMusic() {
     sync();
   });
   document.addEventListener('visibilitychange', sync);
+}
+
+/** Lowers the music while something else should be heard or watched (live thumbnails). */
+export function duckMusic(on: boolean) {
+  const next = on ? 0.45 : 1;
+  if (next === duck) return;
+  duck = next;
+  if (current) fadeTo(LEVEL * mood * duck, on ? 0.5 : 1.2);
 }

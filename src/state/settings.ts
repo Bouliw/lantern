@@ -79,6 +79,14 @@ export function setAppearance(patch: Partial<Appearance>) {
   }
 }
 
+/** Screen saver delay in minutes (0 = off), kept per device: on by default on the TV only. */
+const SAVER_KEY = 'lantern.saver';
+export const saverMinutes = signal<number>(load<number>(SAVER_KEY, isTV ? 5 : 0));
+export function setSaverMinutes(n: number) {
+  saverMinutes.value = n;
+  persist(SAVER_KEY, n);
+}
+
 export function setScope(next: Scope) {
   const current = appearance.value;
   scope.value = next;

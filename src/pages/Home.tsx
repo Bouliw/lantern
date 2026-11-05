@@ -4,7 +4,7 @@ import { api, userId } from '../api/client';
 import type { ItemsResult } from '../api/types';
 import { lang, t } from '../i18n';
 import { appearance } from '../state/settings';
-import { heroItems, homeRows } from '../home/rows';
+import { heroItems, homeRows, topRated } from '../home/rows';
 import { becauseYouWatched, type RecoRow } from '../reco/engine';
 import { cardImageUrls, type CardEntry } from '../ui/Card';
 import { preloadQueue } from '../api/images';
@@ -37,6 +37,7 @@ export function Home() {
 
   const rows = useMemo(() => (c ? homeRows(c, lang.value) : []), [stamp, lang.value]);
   const hero = useMemo(() => (c ? heroItems(c) : []), [stamp]);
+  const top10 = useMemo(() => (c ? topRated(c, 0).slice(0, 10) : []), [stamp]);
 
   useEffect(() => {
     if (!c) return;
@@ -66,9 +67,13 @@ export function Home() {
       <Hero items={hero} />
       <div class="rows">
         {resume.length > 0 && <Row key="continue" rowKey="continue" title={t('rows.continue')} entries={resume} />}
-        {rows.map((r) => (
-          <Row key={r.key} rowKey={r.key} title={r.title} items={r.items} />
-        ))}
+        {rows.map((r) =>
+          r.key === 'top' ? (
+            <Row key="top" rowKey="top" title={t('rows.top10', { n: top10.length })} items={top10} top />
+          ) : (
+            <Row key={r.key} rowKey={r.key} title={r.title} items={r.items} />
+          ),
+        )}
         {reco.map((r) => (
           <Row
             key={'because-' + r.seed.Id}

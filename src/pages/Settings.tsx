@@ -1,4 +1,5 @@
 import type { ComponentChildren } from 'preact';
+import { SplitText } from '../ui/SplitText';
 import { useState } from 'preact/hooks';
 import { APP_VERSION, leaveProfile, quickConnectApprove, serverUrl, session, signOut } from '../api/client';
 import { clearCatalog } from '../api/catalog';
@@ -13,6 +14,8 @@ import {
   setAppearance,
   setScope,
   type Appearance,
+  saverMinutes,
+  setSaverMinutes,
 } from '../state/settings';
 import { ACCENT_CHOICES, THEMES, THEME_ACCENT, type ThemeId } from '../themes/themes';
 import { IconCheck } from '../ui/icons';
@@ -235,7 +238,7 @@ export function Settings() {
 
   return (
     <main class="page settings">
-      <h1 class="page-title">{t('settings.title')}</h1>
+      <h1 class="page-title"><SplitText text={t('settings.title')} /></h1>
 
       <Section title={t('settings.appearance')}>
         <ThemeGrid a={a} />
@@ -264,6 +267,18 @@ export function Settings() {
             onChange={(v) => setAppearance({ transitions: v === 'on' })}
           />
         )}
+        <Segmented
+          label={t('settings.saver')}
+          value={String(saverMinutes.value)}
+          options={[
+            { value: '0', label: t('settings.off') },
+            { value: '2', label: t('settings.minutes', { n: 2 }) },
+            { value: '5', label: t('settings.minutes', { n: 5 }) },
+            { value: '10', label: t('settings.minutes', { n: 10 }) },
+          ]}
+          onChange={(v) => setSaverMinutes(Number(v))}
+        />
+        <p class="setting-hint">{t('settings.saverHint')}</p>
         <Segmented
           label={t('settings.sounds')}
           value={a.sounds ? 'on' : 'off'}

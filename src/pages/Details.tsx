@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
+import { SplitText } from '../ui/SplitText';
 import { ambientSource, setAmbientBase } from '../fx/ambient';
 import { api, userId } from '../api/client';
 import { ITEM_FIELDS, catalog, isInProgress, representative, sagaChildren } from '../api/catalog';
@@ -119,7 +120,7 @@ export function Details({ id }: { id: string }) {
         <div class="details-backdrop">{backdrop && <Img src={imageUrl(backdrop, Math.min(window.innerWidth, 1920))} eager />}</div>
         <div class="details-shade" />
         <div class="details-head">
-          {logo ? <Img src={imageUrl(logo, 640)} class="details-logo" alt={item.Name} eager /> : <h1 class="details-title">{item.Name}</h1>}
+          {logo ? <Img src={imageUrl(logo, 640)} class="details-logo" alt={item.Name} eager /> : <h1 class="details-title"><SplitText text={item.Name} /></h1>}
           <div class="meta-line">
             {meta.join(' · ')}
             {item.OfficialRating && <span class="badge">{item.OfficialRating}</span>}
@@ -239,7 +240,7 @@ function SeriesEpisodes({ series, seasons, parts, initial }: { series: Item; sea
         active={current}
         onPick={setActive}
       />
-      {list ? <EpisodeList items={list} fallback={series} keyPrefix="ep" onPick={(ep) => navigate(`/play/${ep.Id}`)} /> : <Loading />}
+      {list ? <EpisodeList items={list} fallback={series} keyPrefix="ep" onPick={(ep) => navigate(`/play/${ep.Id}`)} /> : <Loading spinner />}
     </section>
   );
 }
@@ -248,7 +249,7 @@ function SagaFilms({ saga }: { saga: Item }) {
   const films = sagaChildren(saga.Id);
   return (
     <section class="details-section">
-      <h2 class="section-title">{t('details.films')}</h2>
+      <h2 class="section-title"><SplitText text={t('details.films')} /></h2>
       <EpisodeList
         items={films}
         keyPrefix="film"

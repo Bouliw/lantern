@@ -80,3 +80,28 @@ export function Card({ item, rowKey, index, play, caption }: Props) {
     </a>
   );
 }
+
+/** Top 10 entry: a big ranked numeral (styled per theme) beside the poster. */
+export function TopCard({ item, rowKey, index }: { item: Item; rowKey: string; index: number }) {
+  const poster = posterOf(item) ?? posterOf(representative(item));
+  return (
+    <a
+      class="card top-card"
+      href={hrefItem(item.Id)}
+      data-nav
+      data-card={item.Id}
+      data-key={`${rowKey}:${item.Id}`}
+      style={{ '--i': Math.min(index, 10) } as any}
+      aria-label={`${index + 1}. ${item.Name}`}
+    >
+      <span class="top-num" aria-hidden="true">
+        {index + 1}
+      </span>
+      <div class="card-media top-media">
+        <Img src={imageUrl(poster, 300)} class="card-img" />
+        {!poster && <span class="card-title">{item.Name}</span>}
+        <span class="card-fx" data-num={String(index + 1).padStart(2, '0')} />
+      </div>
+    </a>
+  );
+}

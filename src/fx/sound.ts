@@ -6,7 +6,7 @@
 import { effect } from '@preact/signals';
 import { appearance } from '../state/settings';
 import { route } from '../router';
-import { bell, chip, ctx, drop, epiano, hat, marimba, onAudio, pluck, setReverb, sfxBus, unlockAudio } from './audio';
+import { bell, chip, ctx, drop, epiano, hat, marimba, onAudio, pad, pluck, setReverb, sfxBus, unlockAudio } from './audio';
 
 export type Cue = 'move' | 'select' | 'open' | 'back' | 'play' | 'pause' | 'toggle' | 'error';
 
@@ -89,6 +89,17 @@ export function playSound(cue: Cue) {
   if (cue === 'move' && k.move === 'tick') return hat(sfxBus, t, 0.5, 3200, 0.018);
   if (cue === 'move' && k.move === 'drop') return drop(sfxBus, t, k.root + 12, 0.35);
   for (const [semi, delay, vel] of gesture(cue, k)) strike(k, k.root + semi, t + delay, vel);
+}
+
+/** Opening sting: a soft chord swells, then the style's instrument rises through it. */
+export function playSting() {
+  if (!ctx || !sfxBus) return;
+  const k = kitFor();
+  setReverb('sfx', Math.max(k.reverb, 0.38));
+  const t = ctx.currentTime + 0.02;
+  const chord = [0, 7, third(k) + 12, seventh(k) + 12].map((s) => k.root - 12 + s);
+  pad(sfxBus, t, chord, 1.1, 1.5, { wave: 'triangle', cutoff: 1800, attack: 0.45, release: 1.6 });
+  [0, 7, 12, third(k) + 12, 19].forEach((s, i) => strike(k, k.root + s, t + 0.35 + i * 0.075, 0.32 - i * 0.03));
 }
 
 /** Section depth, so moving deeper sounds like "open" and coming back like "back". */

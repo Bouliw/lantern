@@ -3,7 +3,7 @@ import type { Item } from '../api/types';
 import { hasHover } from '../platform';
 import { appearance } from '../state/settings';
 import { t } from '../i18n';
-import { Card, type CardEntry } from './Card';
+import { Card, TopCard, type CardEntry } from './Card';
 import { revealOnScroll } from '../fx/juice';
 import { IconChevronLeft, IconChevronRight } from './icons';
 
@@ -12,9 +12,11 @@ interface Props {
   items?: Item[];
   entries?: CardEntry[];
   rowKey: string;
+  /** Ranked Top 10 layout. */
+  top?: boolean;
 }
 
-export function Row({ title, items: plain, entries, rowKey }: Props) {
+export function Row({ title, items: plain, entries, rowKey, top }: Props) {
   const list: CardEntry[] = entries ?? (plain ?? []).map((item) => ({ item }));
   const items = list;
   const track = useRef<HTMLDivElement>(null);
@@ -57,7 +59,7 @@ export function Row({ title, items: plain, entries, rowKey }: Props) {
   };
 
   return (
-    <section ref={self} class="row" data-row data-row-key={rowKey}>
+    <section ref={self} class={top ? 'row top-row' : 'row'} data-row data-row-key={rowKey}>
       <h2 class="row-title">{title}</h2>
       <div class="row-viewport">
         {hasHover && edges.left && (
@@ -66,9 +68,13 @@ export function Row({ title, items: plain, entries, rowKey }: Props) {
           </button>
         )}
         <div class="row-track" data-row-track ref={track} onScroll={onScroll}>
-          {items.map((e, i) => (
-            <Card key={(e.play ?? e.item).Id} {...e} rowKey={rowKey} index={i} />
-          ))}
+          {items.map((e, i) =>
+            top ? (
+              <TopCard key={e.item.Id} item={e.item} rowKey={rowKey} index={i} />
+            ) : (
+              <Card key={(e.play ?? e.item).Id} {...e} rowKey={rowKey} index={i} />
+            ),
+          )}
         </div>
         {hasHover && edges.right && (
           <button class="row-arrow right" onClick={() => page(1)} aria-label={t('rows.scrollRight')} tabIndex={-1}>

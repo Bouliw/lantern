@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { api, deviceId, serverUrl, session, userId } from '../api/client';
-import { loadCatalog } from '../api/catalog';
-import { imageUrl, trickplayUrl } from '../api/images';
+import { catalog, loadCatalog, representative } from '../api/catalog';
+import { imageUrl, logoOf, stillOf, trickplayUrl } from '../api/images';
+import { overviewOf } from '../ui/meta';
+import { SplitText } from '../ui/SplitText';
 import type { Item, ItemsResult, MediaSegment, MediaSource, MediaStream, TrickplayInfo } from '../api/types';
 import { TICKS_PER_SECOND } from '../api/types';
 import { formatClock, t } from '../i18n';
@@ -136,6 +138,8 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [pauseInfo, setPauseInfo] = useState(false);
+  const lastPoke = useRef(0);
   const [pulse, setPulse] = useState<{ kind: 'play' | 'pause' | 'fwd' | 'back'; n: number; label?: string } | null>(null);
   const [waiting, setWaiting] = useState(true);
   const [volume, setVolume] = useState(1);
@@ -483,6 +487,8 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
   // ---- Controls visibility -----------------------------------------------------
 
   const poke = () => {
+    lastPoke.current = performance.now();
+    setPauseInfo(false);
     setControls(true);
     clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => {
@@ -721,6 +727,27 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
     if (countdown != null && countdown <= 0) goNext();
   }, [countdown]);
 
+  // Paused for a while without touching anything: a "You're watching" screen.
+  useEffect(() => {
+    if (!paused || menu || error || showNext) {
+      setPauseInfo(false);
+      return;
+    }
+    lastPoke.current = performance.now();
+    const id = setInterval(() => {
+      if (performance.now() - lastPoke.current > 10000) setPauseInfo(true);
+    }, 1000);
+    const wake = () => {
+      lastPoke.current = performance.now();
+      setPauseInfo(false);
+    };
+    window.addEventListener('keydown', wake, true);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener('keydown', wake, true);
+    };
+  }, [paused, menu, !!error, showNext]);
+
   // Skip buttons take the focus on TV when they appear.
   useEffect(() => {
     if (isTV && (intro || outro || showNext)) requestAnimationFrame(() => focusElement(document.querySelector<HTMLElement>('.skip-btn')));
@@ -746,6 +773,9 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
       : { main: item.Name, sub: '' }
     : { main: '', sub: '' };
 
+  const unit = item ? (catalog.value?.byId.get(item.SeriesId ?? item.Id) ?? item) : null;
+  const pauseLogo = unit ? imageUrl(logoOf(unit, representative(unit)), 600) : undefined;
+
   // Scrubber pointer handling (mouse and touch).
   const timeFromX = (clientX: number) => {
     const r = scrubberRef.current!.getBoundingClientRect();
@@ -760,11 +790,22 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
   return (
     <div
       ref={root}
-      class={'player' + (controls || paused ? ' show-controls' : '') + (menu ? ' has-menu' : '')}
+      class={
+        'player' +
+        (controls || paused ? ' show-controls' : '') +
+        (menu ? ' has-menu' : '') +
+        (showNext && nextEp && !menu ? ' credits' : '') +
+        (pauseInfo ? ' pause-info' : '')
+      }
       data-nav-layer
       onMouseMove={poke}
       onTouchStart={poke}
     >
+      {showNext && nextEp && !menu && (
+        <div class="credits-bg">
+          <Img src={imageUrl(stillOf(nextEp), 1280)} eager />
+        </div>
+      )}
       <video
         ref={video}
         class="player-video"
@@ -787,6 +828,15 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
       {pulse && (
         <div key={pulse.n} class={'player-pulse ' + pulse.kind} aria-hidden="true">
           {pulse.kind === 'play' ? <IconPlay size={46} /> : pulse.kind === 'pause' ? <IconPause size={46} /> : <span>{pulse.label}</span>}
+        </div>
+      )}
+
+      {pauseInfo && item && (
+        <div class="pause-screen" aria-live="polite">
+          <span class="pause-label">{t('player.watching')}</span>
+          {pauseLogo ? <Img src={pauseLogo} class="pause-logo" eager /> : <h1 class="pause-title"><SplitText text={title.main} /></h1>}
+          {title.sub && <p class="pause-sub">{title.sub}</p>}
+          {overviewOf(item) && <p class="pause-overview">{overviewOf(item)}</p>}
         </div>
       )}
 
@@ -941,6 +991,7 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
           <span class="next-text">
             <span class="next-label">{countdown != null && countdown > 0 ? t('player.nextIn', { n: countdown }) : t('player.next')}</span>
             <strong>{nextEp.Name}</strong>
+            {nextEp.Overview && <span class="next-overview">{nextEp.Overview}</span>}
           </span>
           <span class="next-actions">
             <button class="skip-btn inline" data-nav onClick={goNext}>

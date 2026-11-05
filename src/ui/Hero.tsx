@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { SplitText } from './SplitText';
 import type { Item } from '../api/types';
 import { isInProgress, representative } from '../api/catalog';
 import { backdropOf, imageUrl, logoOf, preload } from '../api/images';
@@ -83,7 +84,7 @@ export function Hero({ items }: { items: Item[] }) {
           {logo ? (
             <Img src={imageUrl(logo, 640)} class="hero-logo" alt={item.Name} eager />
           ) : (
-            <h1 class="hero-title">{item.Name}</h1>
+            <h1 class="hero-title"><SplitText text={item.Name} /></h1>
           )}
           <div class="hero-meta">{meta.join(' · ')}</div>
           <p class="hero-overview">{overviewOf(item)}</p>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { zoomInto } from '../fx/zoom';
 import {
   HttpError,
   hasSavedSession,
@@ -84,9 +85,13 @@ export function Profiles({ onServer }: { onServer: () => void }) {
     }
   };
 
-  const choose = (user: PublicUser) => {
-    if (hasSavedSession(user.Id) && restoreSession(user.Id)) return;
-    if (!user.HasPassword) void tryLogin(user, '');
+  const choose = (user: PublicUser, el?: HTMLElement) => {
+    const art = el?.querySelector<HTMLElement>('.profile-img, .avatar') ?? el;
+    if (hasSavedSession(user.Id)) {
+      void zoomInto(art).then(() => restoreSession(user.Id));
+      return;
+    }
+    if (!user.HasPassword) void zoomInto(art).then(() => tryLogin(user, ''));
     else {
       setPicked(user);
       setPassword('');
@@ -95,7 +100,7 @@ export function Profiles({ onServer }: { onServer: () => void }) {
   };
 
   if (failed) return <Message text={t('common.offline')} action={{ label: t('common.retry'), run: load }} />;
-  if (!users) return <Loading />;
+  if (!users) return <Loading spinner />;
 
   return (
     <main class="profiles" data-nav-layer>
@@ -120,7 +125,7 @@ export function Profiles({ onServer }: { onServer: () => void }) {
           <ul class="profiles-list">
             {users.map((u) => (
               <li key={u.Id}>
-                <button class="profile" data-nav onClick={() => choose(u)} disabled={busy}>
+                <button class="profile" data-nav onClick={(e) => choose(u, e.currentTarget as HTMLElement)} disabled={busy}>
                   {u.PrimaryImageTag ? (
                     <Img class="profile-img" src={`${serverUrl.value}/UserImage?userId=${u.Id}&tag=${u.PrimaryImageTag}&maxWidth=240`} />
                   ) : (

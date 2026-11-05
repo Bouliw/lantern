@@ -9,6 +9,7 @@ import { catalog, representative } from '../api/catalog';
 import { preload, trickplayUrl } from '../api/images';
 import { appearance } from '../state/settings';
 import { isTV } from '../platform';
+import { duckMusic } from './music';
 
 interface Source {
   id: string;
@@ -103,12 +104,14 @@ export function startLive(box: HTMLElement, item: Item): () => void {
     if (img) img.after(el);
     else box.prepend(el);
     requestAnimationFrame(() => el?.classList.add('on'));
+    duckMusic(true);
     timer = setInterval(show, 170);
   })();
 
   return () => {
     stopped = true;
     clearInterval(timer);
+    if (el) duckMusic(false);
     el?.remove();
   };
 }
@@ -129,7 +132,7 @@ export function initLiveFocus() {
   document.addEventListener('focusin', (e) => {
     clear();
     const card = (e.target as HTMLElement).closest<HTMLElement>('[data-card]');
-    if (!card || appearance.value.cards !== 'landscape') return;
+    if (!card || appearance.value.cards !== 'landscape' || card.classList.contains('top-card')) return;
     timer = setTimeout(() => {
       const item = catalog.value?.byId.get(card.dataset.card!);
       const box = card.querySelector<HTMLElement>('.card-media');

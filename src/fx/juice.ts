@@ -173,10 +173,18 @@ function initParallax() {
   let ticking = false;
   const apply = () => {
     ticking = false;
-    const stage = document.querySelector<HTMLElement>('.hero-stage');
-    if (!stage) return;
     const y = window.scrollY;
-    stage.style.transform = juicy() && y < window.innerHeight ? `translate3d(0, ${(y * 0.35).toFixed(1)}px, 0)` : '';
+    const on = juicy() && y < window.innerHeight * 1.2;
+    const stage = document.querySelector<HTMLElement>('.hero-stage');
+    if (stage) stage.style.transform = on ? `translate3d(0, ${(y * 0.35).toFixed(1)}px, 0)` : '';
+    // Title pages: the backdrop drifts away slowly while the title floats a little closer.
+    const back = document.querySelector<HTMLElement>('.details-backdrop');
+    const head = document.querySelector<HTMLElement>('.details-head');
+    if (back) back.style.transform = on ? `translate3d(0, ${(y * 0.42).toFixed(1)}px, 0)` : '';
+    if (head) {
+      head.style.transform = on ? `translate3d(0, ${(y * 0.16).toFixed(1)}px, 0)` : '';
+      head.style.opacity = on ? String(Math.max(0, 1 - y / (window.innerHeight * 0.8)).toFixed(3)) : '';
+    }
   };
   window.addEventListener(
     'scroll',
