@@ -24,8 +24,8 @@ only replaces the interface.
 - **Parts instead of seasons** when a show's seasons have their own names (a TV run, a film, a film series).
   Extras are shown like a season of their own on the movie page.
 - **Its own player**: direct play when the device can, otherwise HLS through Jellyfin (remux first, transcode
-  only when needed). Audio and subtitle choice, resume, next episode, skip intro and credits (media segments),
-  scrubbing previews (trickplay) and chapters. After a long pause it shows what you are watching; during the
+  only when needed). Audio and subtitle choice, forced subtitles in the spoken language shown on their own,
+  resume, next episode, skip intro and credits (media segments), scrubbing previews (trickplay) and chapters. After a long pause it shows what you are watching; during the
   credits the video steps aside for the next episode.
 - **Recommendations computed on the device** from genres, directors, writers, cast, studios, tags, decade and
   title words (TF-IDF and cosine similarity), blended with the viewer's history and Jellyfin's own "similar"

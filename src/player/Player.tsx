@@ -81,6 +81,25 @@ function preferredAudio(it: Item): number | undefined {
   return (alt ?? def).Index;
 }
 
+const lang = (l?: string) => {
+  const x = (l ?? '').toLowerCase();
+  return x === 'fre' ? 'fra' : x === 'ger' ? 'deu' : x;
+};
+
+/**
+ * Forced subtitles (signs and foreign-language lines) in the language being heard, shown without
+ * being asked for, as streaming services do. Only external text files qualify: the app draws them
+ * itself, so playback is never restarted or re-encoded for them.
+ */
+function forcedSubtitle(it: Item, audio?: number): number | undefined {
+  const streams = it.MediaStreams ?? [];
+  const heard = lang(streams.find((s) => s.Type === 'Audio' && s.Index === audio)?.Language);
+  if (!heard) return undefined;
+  return streams.find(
+    (s) => s.Type === 'Subtitle' && s.IsForced && s.IsExternal && s.IsTextSubtitleStream && lang(s.Language) === heard,
+  )?.Index;
+}
+
 function streamLabel(s: MediaStream): string {
   return s.DisplayTitle || s.Title || s.Language || `#${s.Index}`;
 }
@@ -161,6 +180,8 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
   /** Set when the device ignores seeks in a direct-played file (e.g. no index in the file). */
   const directSeekBroken = useRef(false);
   const started = useRef(false);
+  /** True while the shown subtitles are forced ones the app picked, not the viewer's choice. */
+  const autoSub = useRef(false);
   const lastReport = useRef(0);
   const hideTimer = useRef<ReturnType<typeof setTimeout>>();
   const seekTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -368,7 +389,9 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
         const pos = it.UserData?.PlaybackPositionTicks ?? 0;
         const runtime = it.RunTimeTicks ?? 0;
         const resume = startTicks ?? (pos > 0 && (!runtime || pos < runtime * 0.95) ? pos : 0);
-        void start(resume / TICKS_PER_SECOND);
+        void start(resume / TICKS_PER_SECOND).then(() => {
+          if (alive) applyForced();
+        });
         api<{ Items: MediaSegment[] }>(`/MediaSegments/${id}`)
           .then((r) => alive && setSegments(r.Items ?? []))
           .catch(() => {});
@@ -584,15 +607,28 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
     else root.current?.requestFullscreen?.().catch(() => {});
   };
 
+  /** Shows the forced subtitles matching the audio, unless the viewer picked subtitles. */
+  const applyForced = () => {
+    const it = st.current.item;
+    const s = st.current.stream;
+    if (!it || !s) return;
+    if (st.current.subIndex >= 0 && !autoSub.current) return;
+    const forced = forcedSubtitle(it, s.audio ?? s.source.DefaultAudioStreamIndex);
+    if (forced === st.current.subIndex || (forced == null && st.current.subIndex < 0)) return;
+    void chooseSubtitle(forced ?? -1);
+    autoSub.current = forced != null;
+  };
+
   const chooseAudio = (index: number) => {
     setMenu(null);
     const s = st.current.stream;
     if (!s || s.audio === index) return;
-    void start(video.current?.currentTime ?? 0, index, s.burned);
+    void start(video.current?.currentTime ?? 0, index, s.burned).then(applyForced);
   };
 
   const chooseSubtitle = async (index: number) => {
     setMenu(null);
+    autoSub.current = false;
     const s = st.current.stream;
     const it = st.current.item;
     if (!s || !it) return;
