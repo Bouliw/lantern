@@ -1,16 +1,16 @@
 /**
  * Interface sounds: short musical gestures played on synthesized instruments, in the key of
- * each style's background music (electric piano for Classic, bells for Eva and Glass,
- * marimba and water drops for Y2K, soft plucks for Neon, jazzy Rhodes for P5…).
+ * each style's background music (electric piano for Classic, bells for Eva, soft felt piano
+ * for Glass, marimba and water drops for Y2K, soft plucks for Neon, jazzy Rhodes for P5…).
  */
 import { effect } from '@preact/signals';
 import { appearance } from '../state/settings';
 import { route } from '../router';
-import { bell, chip, ctx, drop, epiano, hat, marimba, onAudio, pad, pluck, setReverb, sfxBus, unlockAudio } from './audio';
+import { bell, chip, ctx, drop, epiano, felt, hat, marimba, onAudio, pad, pluck, setReverb, sfxBus, unlockAudio } from './audio';
 
 export type Cue = 'move' | 'select' | 'open' | 'back' | 'play' | 'pause' | 'toggle' | 'error';
 
-type Inst = 'epiano' | 'bell' | 'marimba' | 'pluck' | 'chip';
+type Inst = 'epiano' | 'felt' | 'bell' | 'marimba' | 'pluck' | 'chip';
 interface Kit {
   root: number; // MIDI note
   minor: boolean;
@@ -24,7 +24,7 @@ const KITS: Record<string, Kit> = {
   eva: { root: 69, minor: true, inst: 'bell', move: 'tick', reverb: 0.4 },
   y2k: { root: 76, minor: false, inst: 'marimba', move: 'drop', reverb: 0.3 },
   neon: { root: 69, minor: true, inst: 'pluck', move: 'note', reverb: 0.38 },
-  glass: { root: 84, minor: false, inst: 'bell', move: 'drop', reverb: 0.5 },
+  glass: { root: 74, minor: false, inst: 'felt', move: 'tick', reverb: 0.42 },
   keynote: { root: 77, minor: false, inst: 'marimba', move: 'tick', reverb: 0.16 },
   pixel: { root: 72, minor: false, inst: 'chip', move: 'note', reverb: 0.12 },
   p5: { root: 74, minor: true, inst: 'epiano', move: 'tick', reverb: 0.26 },
@@ -61,6 +61,8 @@ function strike(k: Kit, m: number, t: number, vel: number) {
   switch (k.inst) {
     case 'epiano':
       return epiano(out, t, m, 1.4, vel);
+    case 'felt':
+      return felt(out, t, m, 1.4, vel * 1.15);
     case 'bell':
       return bell(out, t, m, 2.2, vel);
     case 'marimba':

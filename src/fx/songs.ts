@@ -1,0 +1,190 @@
+/**
+ * Song sheets for the background music, one per style. Each one is a few minutes of form
+ * (intro, verse, chorus, bridge…) before it loops, and fx/compose.ts writes new melodies on
+ * every pass. Chords are Roman numerals relative to the key: upper case major, lower case
+ * minor, `b` for borrowed degrees, `@n` for a chord that lasts n bars.
+ */
+import type { Song } from './compose';
+
+const FORM = ['intro', 'a', 'b', 'a', 'c', 'b', 'a'];
+const LOOP = ['a', 'b', 'c', 'a', 'b'];
+
+export const SONGS: Record<string, Song> = {
+  // Lounge Rhodes in E-flat: warm ninth chords, a borrowed minor four on the way home.
+  classic: {
+    key: 3,
+    scale: 'major',
+    bpm: 72,
+    bars: 2,
+    parts: {
+      intro: { prog: ['Imaj9', 'IVmaj9'], reps: 2, energy: 0.3 },
+      a: { prog: ['Imaj9', 'vi9', 'ii9', 'V9sus4'], reps: 2, energy: 0.6 },
+      b: { prog: ['IVmaj9', 'iii7', 'vi9', 'ii9', 'IVmaj9', 'iv6', 'iii7', 'V9sus4'], bars: 1, reps: 2, energy: 0.85 },
+      c: { prog: ['bVImaj9', 'bVII69', 'Imaj9', 'Imaj9'], energy: 0.45 },
+    },
+    form: FORM,
+    loop: LOOP,
+    range: [55, 79],
+    pad: { wave: 'triangle', cutoff: 1500, vel: 0.9 },
+    bass: 'whole',
+    bassVel: 0.6,
+    drums: { from: 0.8, hat: 0.12, kick: 0.28 },
+    lead: { voice: 'epiano', low: 67, high: 84, notesPerBar: 1.6, vel: 0.32, from: 0.4 },
+    reverb: 0.5,
+  },
+  // Melancholic strings and piano in A minor, a harmonic-minor turn back to the tonic.
+  eva: {
+    key: 9,
+    scale: 'minor',
+    bpm: 60,
+    bars: 2,
+    parts: {
+      intro: { prog: ['i9', 'bVImaj7'], reps: 2, energy: 0.3 },
+      a: { prog: ['i9', 'bVImaj7', 'bIIIadd9', 'bVII'], reps: 2, energy: 0.55 },
+      b: { prog: ['iv9', 'bVII', 'bIIImaj7', 'bVImaj9', 'iiø', 'V7b9'], energy: 0.8 },
+      c: { prog: ['bVImaj7', 'bVII', 'i9', 'i9'], energy: 0.45, voice: 'breath' },
+    },
+    form: FORM,
+    loop: LOOP,
+    range: [52, 76],
+    pad: { wave: 'sawtooth', cutoff: 850, vel: 1 },
+    bass: 'whole',
+    bassVel: 0.55,
+    lead: { voice: 'felt', low: 64, high: 81, notesPerBar: 1.6, vel: 0.36, from: 0.4 },
+    reverb: 0.62,
+  },
+  // Frutiger-aero in E: bright major sevenths, marimba and water drops.
+  y2k: {
+    key: 4,
+    scale: 'major',
+    bpm: 86,
+    bars: 2,
+    parts: {
+      intro: { prog: ['Imaj9', 'IVmaj9'], reps: 2, energy: 0.35 },
+      a: { prog: ['Imaj7', 'vi9', 'IVmaj9', 'V9sus4'], reps: 2, energy: 0.6 },
+      b: { prog: ['IVmaj9', 'V6', 'iii7', 'vi9', 'ii9', 'iii7', 'IVmaj9', 'V9sus4'], bars: 1, reps: 2, energy: 0.85 },
+      c: { prog: ['bVImaj7', 'bVIImaj7', 'Imaj9', 'Imaj9'], energy: 0.45 },
+    },
+    form: FORM,
+    loop: LOOP,
+    range: [56, 80],
+    pad: { wave: 'triangle', cutoff: 2600, vel: 0.7 },
+    bass: 'whole',
+    bassVel: 0.45,
+    drums: { from: 0.8, hat: 0.11, kick: 0.24 },
+    arp: { voice: 'drop', every: 2, vel: 0.14, octave: 12, from: 0.8 },
+    lead: { voice: 'marimba', low: 71, high: 86, notesPerBar: 2, vel: 0.32, from: 0.4 },
+    reverb: 0.45,
+  },
+  // Synthwave in A minor: pulsing bass, gated drums in the chorus, a soft synth flute bridge.
+  neon: {
+    key: 9,
+    scale: 'minor',
+    bpm: 84,
+    bars: 2,
+    parts: {
+      intro: { prog: ['i9', 'bVImaj7'], reps: 2, energy: 0.35 },
+      a: { prog: ['i9', 'bVImaj7', 'bIII', 'bVII'], reps: 2, energy: 0.65 },
+      b: { prog: ['bVImaj7', 'bVII', 'i9', 'i9', 'iv9', 'bVII', 'bIIImaj7', 'Vsus4'], bars: 1, reps: 2, energy: 0.95 },
+      c: { prog: ['bVImaj7', 'bVII', 'bIIImaj7', 'i9'], energy: 0.45, voice: 'breath' },
+    },
+    form: FORM,
+    loop: LOOP,
+    range: [55, 79],
+    pad: { wave: 'sawtooth', cutoff: 1100, vel: 0.85 },
+    bass: 'pulse',
+    bassVel: 0.32,
+    drums: { from: 0.6, hat: 0.18, kick: 0.38, snare: 0.16 },
+    arp: { voice: 'pluck', every: 1, vel: 0.1, octave: 12, from: 0.9 },
+    lead: { voice: 'pluck', low: 69, high: 84, notesPerBar: 2.2, vel: 0.3, from: 0.45 },
+    reverb: 0.45,
+  },
+  // Apple TV calm in D: slow sine pads, a soft felt piano and a breathy lead, nothing bright.
+  glass: {
+    key: 2,
+    scale: 'major',
+    bpm: 58,
+    bars: 2,
+    parts: {
+      intro: { prog: ['Imaj9', 'IVmaj9'], bars: 4, energy: 0.25 },
+      a: { prog: ['Imaj9', 'vi9', 'IVmaj7#11', 'ii9'], reps: 2, energy: 0.6 },
+      b: { prog: ['IVmaj9', 'V9sus4', 'iii7', 'vi9'], reps: 2, energy: 0.7, voice: 'breath' },
+      c: { prog: ['bVIImaj9', 'IVmaj9', 'Imaj9', 'Imaj9'], energy: 0.4 },
+    },
+    form: FORM,
+    loop: LOOP,
+    range: [54, 78],
+    pad: { wave: 'sine', cutoff: 2200, vel: 1.1, attack: 2.4 },
+    bass: 'whole',
+    bassVel: 0.32,
+    lead: { voice: 'felt', low: 65, high: 81, notesPerBar: 2, vel: 0.34, from: 0.35 },
+    reverb: 0.6,
+  },
+  // Keynote stage in F: light marimba over a steady half-note bass.
+  keynote: {
+    key: 5,
+    scale: 'major',
+    bpm: 72,
+    bars: 2,
+    parts: {
+      intro: { prog: ['Iadd9', 'IVmaj7'], reps: 2, energy: 0.3 },
+      a: { prog: ['Imaj7', 'iii7', 'IVmaj9', 'V9sus4'], reps: 2, energy: 0.6 },
+      b: { prog: ['vi9', 'IVmaj9', 'Iadd9', 'V6', 'ii9', 'iii7', 'IVmaj9', 'V9sus4'], bars: 1, reps: 2, energy: 0.85 },
+      c: { prog: ['bVIImaj7', 'IVmaj9', 'Iadd9', 'V9sus4'], energy: 0.45 },
+    },
+    form: FORM,
+    loop: LOOP,
+    range: [53, 77],
+    pad: { wave: 'triangle', cutoff: 1300, vel: 0.7 },
+    bass: 'half',
+    bassVel: 0.45,
+    drums: { from: 0.8, hat: 0.1, kick: 0.24 },
+    lead: { voice: 'marimba', low: 67, high: 84, notesPerBar: 2, vel: 0.3, from: 0.4 },
+    reverb: 0.35,
+  },
+  // 8-bit in C: pentatonic tunes over a triangle bass and a quiet arpeggio.
+  pixel: {
+    key: 0,
+    scale: 'pentatonic',
+    bpm: 100,
+    bars: 1,
+    parts: {
+      intro: { prog: ['I', 'vi', 'IV', 'V'], energy: 0.4 },
+      a: { prog: ['I', 'vi', 'IV', 'V'], reps: 4, energy: 0.7 },
+      b: { prog: ['IV', 'V', 'iii', 'vi', 'ii', 'V', 'I', 'I'], reps: 2, energy: 0.9 },
+      c: { prog: ['bVI', 'bVII', 'I', 'I'], bars: 2, energy: 0.5 },
+    },
+    form: FORM,
+    loop: LOOP,
+    range: [60, 79],
+    bass: 'chip',
+    bassVel: 0.9,
+    drums: { from: 0.85, hat: 0.1 },
+    arp: { voice: 'chip', every: 1, vel: 0.36, octave: 12, from: 0.6 },
+    lead: { voice: 'chip', low: 72, high: 88, notesPerBar: 3, vel: 0.62, from: 0.4 },
+    reverb: 0.15,
+  },
+  // Acid jazz in D dorian: Rhodes stabs, a walking bass, swung brushes and a ii-V turnaround.
+  p5: {
+    key: 2,
+    scale: 'dorian',
+    bpm: 92,
+    bars: 1,
+    swing: 0.32,
+    parts: {
+      intro: { prog: ['i9', 'IV13'], bars: 2, energy: 0.4 },
+      a: { prog: ['i9', 'IV13', 'bVIImaj9', 'V7b9'], reps: 4, energy: 0.75 },
+      b: { prog: ['iv9', 'bVII13', 'bIIImaj9', 'bVImaj9', 'iiø', 'V7b9', 'i9', 'i9'], reps: 2, energy: 0.95 },
+      c: { prog: ['i9', 'IV13'], bars: 2, reps: 2, energy: 0.5 },
+    },
+    form: FORM,
+    loop: LOOP,
+    range: [53, 74],
+    comp: true,
+    bass: 'walk',
+    bassVel: 0.6,
+    drums: { from: 0.6, hat: 0.26, kick: 0.32, snare: 0.18 },
+    lead: { voice: 'epiano', low: 69, high: 86, notesPerBar: 2.5, vel: 0.28, from: 0.45 },
+    reverb: 0.3,
+  },
+};

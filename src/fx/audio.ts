@@ -1,8 +1,9 @@
 /**
  * Shared audio engine: one AudioContext (created on the first gesture), a gentle compressor,
  * a soft synthetic room reverb, and two buses (interface sounds, background music).
- * The instruments below are small synthesized voices: electric piano, bell, marimba,
- * plucks, pads… shaped with real envelopes so nothing sounds like a raw oscillator.
+ * The instruments below are small synthesized voices: electric piano, felt piano, bell,
+ * marimba, plucks, a breathy lead, pads, soft drums… shaped with real envelopes so nothing
+ * sounds like a raw oscillator.
  */
 import { isTV } from '../platform';
 
@@ -210,33 +211,120 @@ export function drop(out: AudioNode, t: number, m: number, vel: number) {
   o.frequency.exponentialRampToValueAtTime(f * 1.3, t + 0.06);
 }
 
-/** Pad chord: slow attack, detuned pairs through a gentle filter. */
+/** A node that places what goes into it left (-1) or right (+1) of `out`. */
+export function panned(out: AudioNode, pan: number): AudioNode {
+  const c = ctx!;
+  if (typeof c.createStereoPanner !== 'function') return out;
+  const p = c.createStereoPanner();
+  p.pan.value = pan;
+  p.connect(out);
+  return p;
+}
+
+/**
+ * Pad chord: slow attack, detuned pairs through a gentle filter. With `spread`, the two
+ * detuned layers sit left and right and the filter breathes open and closed over the chord.
+ */
 export function pad(
   out: AudioNode,
   t: number,
   notes: number[],
   dur: number,
   vel: number,
-  opts: { wave?: OscillatorType; cutoff?: number; attack?: number; release?: number } = {},
+  opts: { wave?: OscillatorType; cutoff?: number; attack?: number; release?: number; spread?: boolean } = {},
 ) {
   const c = ctx!;
   const attack = opts.attack ?? 1.6;
   const release = opts.release ?? 2.4;
+  const cutoff = opts.cutoff ?? 1400;
   const lp = c.createBiquadFilter();
   lp.type = 'lowpass';
-  lp.frequency.value = opts.cutoff ?? 1400;
+  lp.frequency.value = cutoff;
+  if (opts.spread) {
+    lp.frequency.setValueAtTime(cutoff * 0.7, t);
+    lp.frequency.linearRampToValueAtTime(cutoff * 1.15, t + Math.max(attack, dur * 0.6));
+    lp.frequency.linearRampToValueAtTime(cutoff * 0.8, t + dur + release);
+  }
   const g = c.createGain();
   const peak = (0.06 * vel) / Math.sqrt(notes.length);
   g.gain.setValueAtTime(0.0001, t);
   g.gain.linearRampToValueAtTime(peak, t + attack);
   g.gain.setValueAtTime(peak, t + Math.max(attack, dur - 0.01));
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur + release);
-  lp.connect(g).connect(out);
+  lp.connect(g);
+  const left = opts.spread ? panned(lp, -0.55) : lp;
+  const right = opts.spread ? panned(lp, 0.55) : lp;
+  g.connect(out);
   const wave = opts.wave ?? 'triangle';
   for (const n of notes) {
-    osc(wave, mtof(n), t, t + dur + release + 0.05, lp, -6);
-    osc(wave, mtof(n), t, t + dur + release + 0.05, lp, 6);
+    osc(wave, mtof(n), t, t + dur + release + 0.05, left, -6);
+    osc(wave, mtof(n), t, t + dur + release + 0.05, right, 6);
   }
+}
+
+/** Felt piano: a soft hammer, warm and round, darkening as it rings (no bright attack). */
+export function felt(out: AudioNode, t: number, m: number, dur: number, vel: number) {
+  const c = ctx!;
+  const f = mtof(m);
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.Q.value = 0.4;
+  lp.frequency.setValueAtTime(Math.min(3200, f * 2.2 + 400 * vel), t);
+  lp.frequency.exponentialRampToValueAtTime(Math.max(260, f * 1.1), t + 1.2);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.3 * vel, t + 0.014);
+  g.gain.exponentialRampToValueAtTime(0.12 * vel, t + 0.4);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4 + dur);
+  lp.connect(g).connect(out);
+  const end = t + 0.45 + dur;
+  osc('triangle', f, t, end, lp, -2);
+  osc('sine', f, t, end, lp, 2);
+  const h = c.createGain();
+  h.gain.value = 0.18;
+  h.connect(lp);
+  osc('sine', f * 2, t, end, h, 1);
+}
+
+/** Breathy lead: a flute-like tone that blooms in slowly, with a vibrato that fades in. */
+export function breath(out: AudioNode, t: number, m: number, dur: number, vel: number) {
+  const c = ctx!;
+  const f = mtof(m);
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = Math.min(5000, f * 2.5);
+  const g = c.createGain();
+  const peak = 0.13 * vel;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(peak, t + 0.09);
+  g.gain.setValueAtTime(peak, t + Math.max(0.11, dur * 0.7));
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.5);
+  lp.connect(g).connect(out);
+  const end = t + dur + 0.55;
+  const body = c.createGain();
+  body.gain.value = 0.35;
+  body.connect(lp);
+  const a = osc('sine', f, t, end, lp);
+  const b = osc('triangle', f, t, end, body, 5);
+  const lfo = c.createOscillator();
+  lfo.frequency.value = 4.8;
+  const depth = c.createGain();
+  depth.gain.setValueAtTime(0, t);
+  depth.gain.linearRampToValueAtTime(f * 0.004, t + 0.6);
+  lfo.connect(depth);
+  depth.connect(a.frequency);
+  depth.connect(b.frequency);
+  lfo.start(t);
+  lfo.stop(end);
+}
+
+/** Soft kick: a short sine thump that drops in pitch. */
+export function kick(out: AudioNode, t: number, vel: number) {
+  const g = ctx!.createGain();
+  env(g, t, 0.55 * vel, 0.003, 0.28);
+  g.connect(out);
+  const o = osc('sine', 120, t, t + 0.35, g);
+  o.frequency.exponentialRampToValueAtTime(44, t + 0.12);
 }
 
 /** Round bass. */
