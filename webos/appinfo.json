@@ -1,0 +1,15 @@
+{
+  "id": "app.lantern.tv",
+  "version": "0.1.0",
+  "vendor": "Lantern",
+  "type": "web",
+  "main": "index.html",
+  "title": "Lantern",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "bgColor": "#141414",
+  "iconColor": "#141414",
+  "resolution": "1920x1080",
+  "disableBackHistoryAPI": true,
+  "requiredACG": []
+}

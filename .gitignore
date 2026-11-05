@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dist-tv/
+out/
+*.ipk
+.DS_Store
+.env
+.env.*
+lantern.config.json

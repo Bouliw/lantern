@@ -1,0 +1,12 @@
+/* Bundled fonts (SIL Open Font License, see THIRD_PARTY_NOTICES.md). A font file is only
+   downloaded when a style actually uses it. */
+@font-face { font-family: "FX Geist"; src: url("../fonts/geist.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "FX Mono"; src: url("../fonts/geist-mono.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "FX Serif"; src: url("../fonts/noto-serif-wdth.woff2") format("woff2"); font-weight: 100 900; font-stretch: 62.5% 100%; font-display: swap; }
+@font-face { font-family: "FX Display"; src: url("../fonts/noto-serif-display-italic.woff2") format("woff2"); font-weight: 100 900; font-style: italic; font-display: swap; }
+@font-face { font-family: "FX Anton"; src: url("../fonts/anton.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "FX Orbitron"; src: url("../fonts/orbitron.woff2") format("woff2"); font-weight: 400 900; font-display: swap; }
+@font-face { font-family: "FX Michroma"; src: url("../fonts/michroma.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "FX Press"; src: url("../fonts/press-start-2p.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "FX Pixelify"; src: url("../fonts/pixelify-sans.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "FX Silk"; src: url("../fonts/silkscreen.woff2") format("woff2"); font-display: swap; }

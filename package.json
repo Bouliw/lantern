@@ -1,0 +1,27 @@
+{
+  "name": "lantern",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A fast, Netflix-style client for Jellyfin. One web app for desktop, webOS TVs and phones.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "serve": "node scripts/serve.mjs",
+    "deploy:mac": "npm run build && bash scripts/install-mac-service.sh",
+    "tv": "tsc --noEmit && node scripts/build-tv.mjs",
+    "icons": "bash scripts/make-icons.sh"
+  },
+  "dependencies": {
+    "@preact/signals": "^1.3.0",
+    "hls.js": "^1.5.0",
+    "preact": "^10.24.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.9.0",
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0"
+  }
+}
