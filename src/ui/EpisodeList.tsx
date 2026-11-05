@@ -15,7 +15,7 @@ interface Props {
   subtitle?: (item: Item) => string;
 }
 
-/** Netflix-style list: still, number, title, runtime and a short summary. */
+/** Episode list: still, number, title, runtime and a short summary. */
 export function EpisodeList({ items, fallback, keyPrefix, onPick, numbered = true, subtitle }: Props) {
   return (
     <ol class="episodes">

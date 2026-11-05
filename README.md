@@ -1,24 +1,65 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/banner-dark.png">
+  <img src="docs/banner-light.png" alt="lantern" width="100%">
+</picture>
+
 # Lantern
 
-A fast, Netflix-style client for [Jellyfin](https://jellyfin.org). One small web app that runs on a desktop browser, on LG webOS TVs and on phones, with Jellyfin staying the engine behind it.
+[![CI](https://github.com/Bouliw/lantern/actions/workflows/ci.yml/badge.svg)](https://github.com/Bouliw/lantern/actions/workflows/ci.yml)
 
-- **Home that feels like a streaming service**: a rotating banner (fade, arrows, dots, logo, summary, Play and More info), then Continue watching, recently added titles, movies, series, sagas, top rated and genres, then "Because you watched…" rows. Title pages end with "More like this".
-- **Sagas, not piles of sequels**: movies that belong to a Jellyfin collection are grouped into one saga card, with its own page listing the films in release order.
-- **Parts instead of seasons** when a show's seasons have their own names (a TV run, a film, a film series). Extras are shown like a season of their own on the movie page.
-- **Its own player**: direct play when the device can, otherwise HLS through Jellyfin (remux first, transcode only when needed). Audio and subtitle choice, resume, next episode, skip intro / credits (media segments), scrubbing previews (trickplay) and chapters.
-- **Recommendations computed on the device** from genres, directors, writers, cast, studios, tags, decade and title words (TF-IDF + cosine similarity), blended with the viewer's history and Jellyfin's own "similar" list.
-- **Styles**: a sober default plus Title Card, Chrome, Neon, Glass, Keynote, Pixel and Ransom. Colors, typography and shapes can be mixed in a custom style, with accent color, animation level, card shape and size. Appearance can follow the profile across devices or stay on one device.
+Lantern is a fast, stylish client for [Jellyfin](https://jellyfin.org). It is one small web app: it runs in
+a desktop browser and installs as an app from Safari, works on phones, and ships as a packaged app for LG
+webOS TVs, where every press of the remote answers instantly. Jellyfin stays the engine behind it; Lantern
+only replaces the interface.
+
+![The home page in the P5 style](docs/home.webp)
+
+## What it does
+
+- **A home page built around what you watch**: a rotating banner (fade, arrows, dots, logo, summary, Play and
+  More info), then Continue watching, recently added titles, movies, series, sagas, a ranked Top of the best
+  rated titles, genres and "Because you watched…" rows. Title pages end with "More like this".
+- **Sagas, not piles of sequels**: movies that belong to a Jellyfin collection are grouped into one saga card,
+  with its own page listing the films in release order.
+- **Parts instead of seasons** when a show's seasons have their own names (a TV run, a film, a film series).
+  Extras are shown like a season of their own on the movie page.
+- **Its own player**: direct play when the device can, otherwise HLS through Jellyfin (remux first, transcode
+  only when needed). Audio and subtitle choice, resume, next episode, skip intro and credits (media segments),
+  scrubbing previews (trickplay) and chapters. After a long pause it shows what you are watching; during the
+  credits the video steps aside for the next episode.
+- **Recommendations computed on the device** from genres, directors, writers, cast, studios, tags, decade and
+  title words (TF-IDF and cosine similarity), blended with the viewer's history and Jellyfin's own "similar"
+  list.
+- **Eight styles with their own feel**: Classic, Eva, Y2K, Neon, Glass, Keynote, Pixel and P5. A style sets the
+  colors, typography and shapes, and also the motion: how a card is selected, page transitions, an animated
+  backdrop, how titles appear, the mouse cursor, the seek bar, interface sounds and a generative background
+  music in its mood. Colors, typography and shapes can be mixed into a custom style.
+- **Motion that feels physical** on a computer: cards lift and tilt toward the cursor, buttons squash and
+  bounce, rows slide in as you scroll and pages move with depth. The page takes on the colors of the artwork
+  on screen, and a title you linger on turns into a short silent montage of its trickplay frames.
+- **Built for each screen**: native trackpad scrolling and hover previews on a computer; instant,
+  focus-following navigation on the TV, with an OLED-safe screen saver that replaces the TV's own while Lantern
+  is open; a touch layout on phones.
+- **Everything can be turned down**: animations, page transitions, sounds, music, ambient color and the screen
+  saver each have a setting. Appearance can follow the profile across devices or stay on one device.
 - **English and French**, following the device language or set by hand, including summaries (see below).
 - **Sign in on the TV with a code**: Jellyfin Quick Connect, approved from Settings on any signed-in device.
-- **Resilient playback**: if a device fails to decode what it claimed to support, the player retries through hls.js, then as a plain H.264 transcode.
-- **Built for each screen**: native trackpad scrolling and lively hover previews on desktop; instant, focus-following navigation with no blur on TV; touch layout on phones.
-- **No CDN, no tracking**: fonts are bundled, artwork is preloaded and cached on the device.
+- **Resilient playback**: if a device fails to decode what it claimed to support, the player retries through
+  hls.js, then as a plain H.264 transcode.
+- **No CDN, no tracking**: fonts are bundled, sounds and music are synthesized in the browser, artwork is
+  preloaded and cached on the device.
+
+<p>
+  <img src="docs/title.webp" width="49%" alt="A title page with parts, in the Eva style">
+  <img src="docs/styles.webp" width="49%" alt="The styles in Settings">
+</p>
 
 ## Requirements
 
 - A Jellyfin server (10.9 or later).
 - Node.js 20 or later to build.
-- Optional: the Intro Skipper plugin (skip buttons) and trickplay images enabled in Jellyfin (scrubbing previews).
+- Optional: the Intro Skipper plugin (skip buttons) and trickplay images enabled in Jellyfin (scrubbing
+  previews and live thumbnails).
 
 ## Build and run
 
@@ -40,13 +81,15 @@ In Safari, open `http://localhost:8097` and choose **File › Add to Dock** to g
 
 ### LG webOS TV
 
-The TV must be in [developer mode](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app) and registered with the webOS CLI (`ares-setup-device`).
+The TV must be in [developer mode](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app)
+and registered with the webOS CLI (`ares-setup-device`).
 
 ```sh
 npm run tv -- --server http://<jellyfin-host>:8096 --device <ares-device-name>
 ```
 
-This builds a package (`out/*.ipk`), installs it and launches it. The server address and device name can also be stored in a git-ignored `lantern.config.json`:
+This builds a package (`out/*.ipk`), installs it and launches it. The server address and device name can also
+be stored in a git-ignored `lantern.config.json`:
 
 ```json
 { "server": "http://192.168.1.10:8096", "device": "tv" }
@@ -54,21 +97,22 @@ This builds a package (`out/*.ipk`), installs it and launches it. The server add
 
 ### Summaries in the interface language
 
-Jellyfin keeps one summary per title, in the library's metadata language. To show summaries in the
-other interface language too, run this on the server machine (administrator API key needed):
+Jellyfin keeps one summary per title, in the library's metadata language. To show summaries in the other
+interface language too, run this on the server machine (administrator API key needed):
 
 ```sh
 node scripts/localize-overviews.mjs --server http://localhost:8096 --token-file <api-key-file> \
   --out ~/Library/Application\ Support/Lantern/overviews.json --langs en,fr
 ```
 
-It asks Jellyfin's own metadata providers for the missing languages, keeps what it already has (so
-it is cheap to run on a schedule) and leaves locked, hand-written summaries alone. The macOS service
-serves the file to every device, TVs included.
+It asks Jellyfin's own metadata providers for the missing languages, keeps what it already has (so it is cheap
+to run on a schedule) and leaves locked, hand-written summaries alone. The macOS service serves the file to
+every device, TVs included.
 
 ### Phones
 
-Open `http://<computer>:8097` on the phone and add it to the home screen. For offline viewing, see [docs/phones.md](docs/phones.md).
+Open `http://<computer>:8097` on the phone and add it to the home screen. For offline viewing, see
+[docs/phones.md](docs/phones.md).
 
 ## How the library is read
 
@@ -97,11 +141,12 @@ src/api        Jellyfin client, catalog cache, artwork URLs
 src/home       home rows
 src/reco       recommendation engine
 src/player     player, device profile, subtitles
+src/fx         motion, sounds and music, ambient color, transitions, live thumbnails, TV power
 src/nav        TV remote navigation
 src/pages      pages (home, library, details, search, settings, profiles)
 src/themes     style definitions
 src/styles     CSS (styles are split into palette, typography and shape layers)
-scripts        static server, macOS service, webOS packaging, icons
+scripts        static server, macOS service, webOS packaging, icons, cursors
 webos          webOS app manifest and icons
 ```
 

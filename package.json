@@ -2,7 +2,7 @@
   "name": "lantern",
   "version": "0.1.0",
   "private": true,
-  "description": "A fast, Netflix-style client for Jellyfin. One web app for desktop, webOS TVs and phones.",
+  "description": "A fast, stylish client for Jellyfin. One web app for desktop, webOS TVs and phones.",
   "license": "MIT",
   "type": "module",
   "scripts": {

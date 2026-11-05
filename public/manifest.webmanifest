@@ -1,7 +1,7 @@
 {
   "name": "Lantern",
   "short_name": "Lantern",
-  "description": "Your Jellyfin library, Netflix-style.",
+  "description": "A stylish client for your Jellyfin library.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
