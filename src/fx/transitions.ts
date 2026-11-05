@@ -2,16 +2,13 @@
  * Page transitions (desktop, "juicy" animations).
  * - Opening a title from a card, the hero or the hover panel morphs its artwork into the
  *   title page's backdrop (View Transitions API).
- * - Other page changes use the style's own signature: a crossfade for Classic, a slide for
- *   Keynote, a red slash for P5, a black title card for Eva, a stepped fade for Pixel…
+ * - Other page changes wipe the old page away while the new one slides in behind a band in
+ *   the style's own look (red slash for P5, hazard stripes for Eva, neon scan for Neon…).
+ *   The app stays visible the whole time; the shapes and colors live in fx.css.
  */
-import { catalog } from '../api/catalog';
 import { hasHover } from '../platform';
-import { t } from '../i18n';
 
 type Commit = () => void;
-
-const SECTIONS = new Set(['series', 'sagas', 'films']);
 
 let pendingArt: HTMLElement | null = null;
 let pendingAt = 0;
@@ -21,28 +18,6 @@ const root = () => document.documentElement;
 const enabled = () => hasHover && root().dataset.motion === 'juicy';
 const supportsVT = () => typeof (document as any).startViewTransition === 'function';
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-function labelFor(parts: string[]): string {
-  const [head, arg] = parts;
-  switch (head) {
-    case undefined:
-      return t('nav.home');
-    case 'series':
-      return t('nav.series');
-    case 'sagas':
-      return t('nav.sagas');
-    case 'films':
-      return t('nav.films');
-    case 'search':
-      return t('nav.search');
-    case 'settings':
-      return t('nav.settings');
-    case 'item':
-      return catalog.value?.byId.get(arg)?.Name ?? '';
-    default:
-      return '';
-  }
-}
 
 function viewTransition(kind: string, update: () => Promise<void>) {
   busy = true;
@@ -72,35 +47,12 @@ function wipe(commit: Commit) {
   });
 }
 
-/** Eva: a black title card with the destination in big condensed serif. */
-function titleCard(label: string, commit: Commit) {
-  const card = document.createElement('div');
-  card.className = 'title-card';
-  const text = document.createElement('span');
-  text.textContent = label;
-  card.append(text);
-  document.body.append(card);
-  busy = true;
-  setTimeout(commit, 110);
-  setTimeout(() => card.classList.add('out'), 420);
-  setTimeout(() => {
-    card.remove();
-    busy = false;
-  }, 640);
-}
-
 /** Called by the router for every page change. */
 export function transition(from: string[], to: string[], commit: Commit) {
   const art = pendingArt && performance.now() - pendingAt < 1500 && pendingArt.isConnected ? pendingArt : null;
   pendingArt = null;
   if (!enabled() || busy || to[0] === 'play' || from[0] === 'play') return commit();
-  // Switching between library sections from the top menu stays instant.
-  if (SECTIONS.has(from[0]) && SECTIONS.has(to[0])) return commit();
   if (to[0] === 'item' && art && supportsVT()) return morph(art, commit);
-  if (root().dataset.palette === 'eva') {
-    const label = labelFor(to);
-    return label ? titleCard(label, commit) : commit();
-  }
   if (supportsVT()) return wipe(commit);
   commit();
 }

@@ -276,68 +276,50 @@ html[data-vt="morph"] .details-backdrop { view-transition-name: lantern-art; }
 @keyframes vtOut { to { opacity: 0; } }
 @keyframes vtIn { from { opacity: 0; } }
 
-/* Classic: a quick crossfade. */
-html[data-vt="wipe"]::view-transition-old(root) { animation: vtOut 0.22s ease both; }
-html[data-vt="wipe"]::view-transition-new(root) { animation: vtIn 0.3s ease both; }
+/*
+ * Section changes: the old page is cut away while the new one is revealed right behind it;
+ * the gap between the two edges shows the style's band. Shape, band, pace per palette.
+ */
+:root { --vt-band: var(--accent); --vt-gap: 0.06s; --vt-d: 0.36s; --vt-ease: cubic-bezier(0.7, 0, 0.3, 1); --vt-out: cutOutX; --vt-in: cutInX; }
+[data-palette="classic"] { --vt-band: #e50914; --vt-gap: 0.035s; }
+[data-palette="eva"] { --vt-band: repeating-linear-gradient(-45deg, #ff5a1f 0 18px, #0b0b0b 18px 36px); --vt-gap: 0.1s; --vt-d: 0.38s; }
+[data-palette="y2k"] { --vt-band: linear-gradient(90deg, #ffffff, #9cc8ff 35%, #1e7bff 65%, #ffffff); --vt-gap: 0.09s; --vt-out: cutOutBack; --vt-in: cutInBack; }
+[data-palette="neon"] { --vt-band: linear-gradient(180deg, #ff2bd6, #7a3cff 50%, #00e5ff); --vt-gap: 0.07s; --vt-out: cutOutY; --vt-in: cutInY; }
+[data-palette="glass"] { --vt-band: linear-gradient(120deg, rgba(255, 255, 255, 0.5), color-mix(in srgb, var(--accent) 55%, transparent)); --vt-gap: 0.12s; --vt-d: 0.46s; --vt-ease: cubic-bezier(0.45, 0, 0.2, 1); --vt-out: cutOutSlash; --vt-in: cutInSlash; }
+[data-palette="keynote"] { --vt-gap: 0s; --vt-d: 0.48s; --vt-ease: cubic-bezier(0.65, 0, 0.25, 1); --vt-out: pushOut; --vt-in: pushIn; }
+[data-palette="pixel"] { --vt-gap: 0.08s; --vt-d: 0.4s; --vt-ease: steps(10, end); }
+[data-palette="p5"] { --vt-band: #e60012; --vt-gap: 0.1s; --vt-d: 0.34s; --vt-out: cutOutSlash; --vt-in: cutInSlash; }
 
-/* Keynote: slides push. */
-html[data-vt="wipe"][data-palette="keynote"]::view-transition-old(root) { animation: pushOut 0.42s cubic-bezier(0.4, 0, 0.2, 1) both; }
-html[data-vt="wipe"][data-palette="keynote"]::view-transition-new(root) { animation: pushIn 0.42s cubic-bezier(0.4, 0, 0.2, 1) both; }
-@keyframes pushOut { to { opacity: 0; transform: translateX(-6%); } }
-@keyframes pushIn { from { opacity: 0; transform: translateX(6%); } }
+html[data-vt="wipe"]::view-transition-image-pair(root) { isolation: auto; background: var(--vt-band); }
+html[data-vt="wipe"]::view-transition-old(root),
+html[data-vt="wipe"]::view-transition-new(root) { mix-blend-mode: normal; }
+html[data-vt="wipe"]::view-transition-old(root) { animation: var(--vt-out) var(--vt-d) var(--vt-ease) both; }
+html[data-vt="wipe"]::view-transition-new(root) { animation: var(--vt-in) var(--vt-d) var(--vt-gap) var(--vt-ease) both; }
 
-/* P5: a red slash cuts the old page away. */
-html[data-vt="wipe"][data-palette="p5"]::view-transition-image-pair(root) { isolation: auto; background: var(--accent, #e60012); }
-html[data-vt="wipe"][data-palette="p5"]::view-transition-old(root),
-html[data-vt="wipe"][data-palette="p5"]::view-transition-new(root) { mix-blend-mode: normal; }
-html[data-vt="wipe"][data-palette="p5"]::view-transition-old(root) { animation: p5Out 0.34s cubic-bezier(0.7, 0, 0.3, 1) both; }
-html[data-vt="wipe"][data-palette="p5"]::view-transition-new(root) { animation: p5In 0.34s 0.1s cubic-bezier(0.7, 0, 0.3, 1) both; }
-@keyframes p5Out {
+/* Straight edge, left to right. */
+@keyframes cutOutX { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(0 0 0 100%); } }
+@keyframes cutInX { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+/* Top to bottom, like a scan line. */
+@keyframes cutOutY { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(100% 0 0 0); } }
+@keyframes cutInY { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+/* Slanted edge "/". */
+@keyframes cutOutSlash {
   from { clip-path: polygon(0 0, 125% 0, 100% 100%, -25% 100%); }
   to { clip-path: polygon(125% 0, 125% 0, 100% 100%, 100% 100%); }
 }
-@keyframes p5In {
+@keyframes cutInSlash {
   from { clip-path: polygon(0 0, 0 0, -25% 100%, -25% 100%); }
   to { clip-path: polygon(0 0, 125% 0, 100% 100%, -25% 100%); }
 }
-
-/* Pixel: a stepped, 8-bit fade. */
-html[data-vt="wipe"][data-palette="pixel"]::view-transition-old(root) { animation: vtOut 0.32s steps(4) both; }
-html[data-vt="wipe"][data-palette="pixel"]::view-transition-new(root) { animation: vtIn 0.32s steps(4) both; }
-
-/* Neon: the new page flickers on like a tube. */
-html[data-vt="wipe"][data-palette="neon"]::view-transition-old(root) { animation: vtOut 0.18s ease both; }
-html[data-vt="wipe"][data-palette="neon"]::view-transition-new(root) { animation: flicker 0.5s linear both; }
-@keyframes flicker {
-  0% { opacity: 0; } 12% { opacity: 0.9; } 20% { opacity: 0.1; } 34% { opacity: 1; } 44% { opacity: 0.35; } 58%, 100% { opacity: 1; }
+/* Slanted edge "\". */
+@keyframes cutOutBack {
+  from { clip-path: polygon(-25% 0, 125% 0, 125% 100%, 0 100%); }
+  to { clip-path: polygon(100% 0, 125% 0, 125% 100%, 125% 100%); }
 }
-
-/* Glass: a frosted blur between pages. */
-html[data-vt="wipe"][data-palette="glass"]::view-transition-old(root) { animation: frostOut 0.35s ease both; }
-html[data-vt="wipe"][data-palette="glass"]::view-transition-new(root) { animation: frostIn 0.42s ease both; }
-@keyframes frostOut { to { opacity: 0; filter: blur(14px); } }
-@keyframes frostIn { from { opacity: 0; filter: blur(14px); } }
-
-/* Y2K: a soft diagonal sweep. */
-html[data-vt="wipe"][data-palette="y2k"]::view-transition-old(root) { animation: none; mix-blend-mode: normal; }
-html[data-vt="wipe"][data-palette="y2k"]::view-transition-new(root) {
-  mix-blend-mode: normal;
-  -webkit-mask-image: linear-gradient(110deg, #000 45%, transparent 55%); mask-image: linear-gradient(110deg, #000 45%, transparent 55%);
-  -webkit-mask-size: 250% 100%; mask-size: 250% 100%;
-  animation: sweep 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+@keyframes cutInBack {
+  from { clip-path: polygon(-25% 0, -25% 0, 0 100%, -25% 100%); }
+  to { clip-path: polygon(-25% 0, 100% 0, 125% 100%, -25% 100%); }
 }
-@keyframes sweep { from { -webkit-mask-position: 100% 0; mask-position: 100% 0; } to { -webkit-mask-position: 0 0; mask-position: 0 0; } }
-
-/* Eva: a black title card. */
-.title-card {
-  position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; padding: 0 9vw;
-  background: #000; pointer-events: none; animation: vtIn 0.08s linear both;
-}
-.title-card span {
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; max-width: 82vw;
-  font-family: "FX Serif", Georgia, serif; font-weight: 900; font-stretch: 62.5%; font-size: clamp(3rem, 8.5vw, 9.5rem);
-  line-height: 0.92; letter-spacing: -0.01em; text-transform: uppercase; color: #f3ede2;
-  transform: scaleY(1.12); transform-origin: left center; animation: titleIn 0.42s var(--ease-out) both;
-}
-.title-card.out { opacity: 0; transition: opacity 0.2s linear; }
-@keyframes titleIn { from { opacity: 0; letter-spacing: 0.06em; } }
+/* Keynote: the pages push each other, like slides. */
+@keyframes pushOut { to { transform: translateX(-100%); } }
+@keyframes pushIn { from { transform: translateX(100%); } }
