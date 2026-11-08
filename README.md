@@ -81,14 +81,21 @@ In Safari, open `http://localhost:8097` and choose **File › Add to Dock** to g
 
 ### LG webOS TV
 
-The TV must be in [developer mode](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app)
+**From a release**: download `app.lantern.tv_<version>_all.ipk` from the
+[latest release](https://github.com/Bouliw/lantern/releases/latest) and install it on a TV in developer mode,
+with `ares-install` or [webOS Dev Manager](https://github.com/webosbrew/dev-manager-desktop). On first launch,
+Lantern asks for the address of your Jellyfin server. It needs webOS 22 or later.
+
+**From source**: the TV must be in [developer mode](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app)
 and registered with the webOS CLI (`ares-setup-device`).
 
 ```sh
 npm run tv -- --server http://<jellyfin-host>:8096 --device <ares-device-name>
 ```
 
-This builds a package (`out/*.ipk`), installs it and launches it. The server address and device name can also
+This builds a package (`out/*.ipk`) with the server address inside, installs it and launches it.
+`npm run tv -- --release` builds the generic package published in the releases instead, with the manifest used
+by the webOS Homebrew Channel. The server address and device name can also
 be stored in a git-ignored `lantern.config.json`:
 
 ```json
