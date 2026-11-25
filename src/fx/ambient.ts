@@ -99,6 +99,8 @@ async function apply() {
   const root = document.documentElement;
   if (color) {
     root.style.setProperty('--ambient-c', color);
+    // Same colour as "h, s%, l%" for browsers without color-mix(): hsla(var(--ambient-hsl), alpha).
+    root.style.setProperty('--ambient-hsl', color.slice(4, -1).split(' ').join(', '));
     root.dataset.ambientLit = '1';
   } else {
     delete root.dataset.ambientLit;

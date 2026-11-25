@@ -1,6 +1,6 @@
 import { computed, effect, signal } from '@preact/signals';
 import { api, load, persist, serverUrl, session, userId } from '../api/client';
-import { THEMES, THEME_BG, inkFor, type ThemeId } from '../themes/themes';
+import { THEMES, THEME_BG, inkFor, rgbOf, type ThemeId } from '../themes/themes';
 import { isTV } from '../platform';
 
 export type Motion = 'juicy' | 'subtle' | 'off';
@@ -151,9 +151,11 @@ effect(() => {
   root.dataset.ambient = a.ambient ? 'on' : 'off';
   if (a.accent) {
     root.style.setProperty('--accent', a.accent);
+    root.style.setProperty('--accent-rgb', rgbOf(a.accent));
     root.style.setProperty('--accent-ink', inkFor(a.accent));
   } else {
     root.style.removeProperty('--accent');
+    root.style.removeProperty('--accent-rgb');
     root.style.removeProperty('--accent-ink');
   }
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_BG[parts.palette]);
