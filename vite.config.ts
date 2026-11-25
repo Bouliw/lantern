@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import preact from '@preact/preset-vite';
+import colorMixFallback from './scripts/color-mix-fallback.mjs';
 
 /**
  * TV packages load from file://, where ES modules and crossorigin requests are not reliable.
@@ -26,6 +27,7 @@ export default defineConfig(({ mode }) => {
   return {
     base: './',
     plugins: [preact(), ...(tv ? [classicScripts()] : [])],
+    css: tv ? { postcss: { plugins: [colorMixFallback()] } } : {},
     build: {
       target: ['es2020', 'safari15', 'chrome87'],
       outDir: tv ? 'dist-tv' : 'dist',

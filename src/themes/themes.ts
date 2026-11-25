@@ -27,6 +27,12 @@ export const THEME_BG: Record<ThemeId, string> = {
 
 export const ACCENT_CHOICES = ['#e50914', '#ff5a1f', '#ffc93c', '#3ddc84', '#00d1ff', '#2997ff', '#8b5cf6', '#ff2bd6', '#f5f5f7'];
 
+/** "r, g, b" channels of a #rrggbb colour, for rgba(var(--accent-rgb), alpha). */
+export function rgbOf(hex: string): string {
+  const h = hex.replace('#', '');
+  return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)).join(', ');
+}
+
 export function inkFor(hex: string): string {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
   if (!m) return '#fff';
