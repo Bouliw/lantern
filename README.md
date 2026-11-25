@@ -5,7 +5,7 @@
 
 # Lantern
 
-[![CI](https://github.com/Bouliw/lantern/actions/workflows/ci.yml/badge.svg)](https://github.com/Bouliw/lantern/actions/workflows/ci.yml)
+[![CI](https://github.com/Bouliw/lantern/actions/workflows/ci.yml/badge.svg)](https://github.com/Bouliw/lantern/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/Bouliw/lantern?sort=semver)](https://github.com/Bouliw/lantern/releases/latest) [![License](https://img.shields.io/github/license/Bouliw/lantern)](LICENSE)
 
 Lantern is a fast, stylish client for [Jellyfin](https://jellyfin.org). It is one small web app: it runs in
 a desktop browser and installs as an app from Safari, works on phones, and ships as a packaged app for LG
