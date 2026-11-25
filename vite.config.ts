@@ -27,7 +27,7 @@ export default defineConfig(({ mode }) => {
   return {
     base: './',
     plugins: [preact(), ...(tv ? [classicScripts()] : [])],
-    css: tv ? { postcss: { plugins: [colorMixFallback()] } } : {},
+    css: { postcss: { plugins: [colorMixFallback()] } },
     build: {
       target: ['es2020', 'safari15', 'chrome87'],
       outDir: tv ? 'dist-tv' : 'dist',

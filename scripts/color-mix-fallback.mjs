@@ -1,4 +1,5 @@
-// PostCSS plugin for the TV build: color-mix() needs Chrome 111 and TVs go back to Chrome 87.
+// PostCSS plugin: color-mix() needs Chrome 111 or Safari 16.2, and the build targets go back to
+// Chrome 87 (TVs) and Safari 15.
 //
 // Every color-mix() here mixes a custom property, and a declaration that contains var() is only
 // found invalid at computed-value time, so a plain fallback declaration in front of it would
