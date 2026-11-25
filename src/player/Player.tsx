@@ -175,16 +175,16 @@ export function Player({ id, startTicks }: { id: string; startTicks: number | nu
   const safeMode = useRef(false);
   const forceHlsJs = useRef(false);
   const nativeHls = useRef(false);
-  const watchdog = useRef<ReturnType<typeof setTimeout>>();
-  const seekGuard = useRef<ReturnType<typeof setTimeout>>();
+  const watchdog = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const seekGuard = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   /** Set when the device ignores seeks in a direct-played file (e.g. no index in the file). */
   const directSeekBroken = useRef(false);
   const started = useRef(false);
   /** True while the shown subtitles are forced ones the app picked, not the viewer's choice. */
   const autoSub = useRef(false);
   const lastReport = useRef(0);
-  const hideTimer = useRef<ReturnType<typeof setTimeout>>();
-  const seekTimer = useRef<ReturnType<typeof setTimeout>>();
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const seekTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const scrubberRef = useRef<HTMLDivElement>(null);
 
   // Latest values for event handlers.
