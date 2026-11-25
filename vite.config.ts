@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => {
       cssCodeSplit: !tv,
       // hls.js is loaded on demand, only by browsers without native HLS.
       chunkSizeWarningLimit: tv ? 1200 : 700,
-      rollupOptions: tv ? { output: { format: 'iife', inlineDynamicImports: true } } : {},
+      rollupOptions: tv ? { output: { format: 'iife' } } : {},
     },
     server: { host: true, port: 5173 },
   };
